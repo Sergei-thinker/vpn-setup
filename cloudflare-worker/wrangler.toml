@@ -1,0 +1,11 @@
+name = "vpn-ws-proxy"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# ── Environment variables ───────────────────────────────────────────
+# Override via `wrangler secret put` or Cloudflare dashboard for secrets.
+[vars]
+BACKEND_HOST = "YOUR_VPS_IP"
+BACKEND_PORT = "2082"
+# IMPORTANT: change this to a long random string before deploying!
+WS_PATH = "/ws-vless-YOUR_SECRET_PATH"

@@ -1,0 +1,30 @@
+# Credentials and secrets
+.env
+*.secrets
+*-credentials.txt
+
+# Python
+__pycache__/
+*.pyc
+
+# Node.js
+node_modules/
+
+# Cloudflare
+.wrangler/
+
+# Backups and databases
+backups/
+*.db
+
+# OlcRTC build artifacts
+olcrtc/
+
+# IDE and OS
+.claude/
+.DS_Store
+Thumbs.db
+*.log
+
+# Development log (personal, not for public repo)
+DEVELOPMENT_LOG.md

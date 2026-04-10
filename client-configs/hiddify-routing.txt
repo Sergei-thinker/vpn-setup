@@ -1,0 +1,251 @@
+# ============================================
+# Hiddify Split Routing Configuration
+# Russian services go DIRECT, everything else through VPN
+# Last updated: 2026-04-08
+# ============================================
+#
+# HOW TO APPLY IN HIDDIFY:
+#
+# Method 1: Via Hiddify Settings UI
+#   1. Open Hiddify -> Settings -> Config Options -> Routing
+#   2. Set "Remote DNS" to: https://1.1.1.1/dns-query
+#   3. Set "Direct DNS" to: https://77.88.8.8/dns-query (Yandex DNS for Russian domains)
+#   4. Under "Routing Mode" select "Custom"
+#   5. In "Direct domains / keywords" paste the domain list below
+#   6. In "Direct IPs" enter: geoip:ru, geoip:private
+#   7. Leave "Blocked domains" empty or add ad domains
+#   8. Save and reconnect
+#
+# Method 2: Via Subscription Link
+#   If your 3X-UI panel generates Hiddify subscription links, server-side
+#   routing (xray-server-routing.json) will handle split routing automatically.
+#
+# Method 3: Via Custom Config
+#   1. Open Hiddify -> Settings -> Config Options -> Advanced
+#   2. Enable "Custom Config"
+#   3. Paste the Xray routing JSON from xray-server-routing.json
+#
+# ============================================
+
+# ============================================
+# DIRECT DOMAINS LIST
+# Copy everything below into Hiddify "Direct domains" field
+# Use comma-separated format
+# ============================================
+
+# --- Search Engines ---
+yandex.ru
+yandex.com
+yandex.net
+yandex.by
+yandex.kz
+yandex.ua
+ya.ru
+yastatic.net
+yandex-team.ru
+yandexcloud.net
+
+# --- Social Networks ---
+vk.com
+vk.ru
+vk.me
+vkuseraudio.net
+vkuservideo.net
+userapi.com
+vk-cdn.net
+ok.ru
+odnoklassniki.ru
+odkl.ru
+
+# --- Email ---
+mail.ru
+bk.ru
+inbox.ru
+list.ru
+imgsmail.ru
+mradx.net
+mycdn.me
+
+# --- Messengers ---
+icq.com
+icq.net
+tamtam.chat
+
+# --- Banks & Finance ---
+sberbank.ru
+sber.ru
+sberbank.com
+tinkoff.ru
+tbank.ru
+tinkoffbank.ru
+vtb.ru
+vtb24.ru
+alfa-bank.ru
+alfabank.ru
+raiffeisen.ru
+raiffeisenbank.ru
+gazprombank.ru
+rosbank.ru
+open.ru
+openbank.ru
+rshb.ru
+psbank.ru
+sovcombank.ru
+homecredit.ru
+mkb.ru
+pochtabank.ru
+uralsib.ru
+moex.com
+cbr.ru
+
+# --- Government ---
+gosuslugi.ru
+nalog.ru
+nalog.gov.ru
+mos.ru
+gov.ru
+government.ru
+kremlin.ru
+pfr.ru
+sfr.gov.ru
+fss.ru
+rosreestr.ru
+fns.ru
+mvd.ru
+gibdd.ru
+consultant.ru
+garant.ru
+
+# --- Shopping ---
+ozon.ru
+wildberries.ru
+wb.ru
+wbstatic.net
+wbbasket.ru
+avito.ru
+megamarket.ru
+sbermegamarket.ru
+lamoda.ru
+dns-shop.ru
+mvideo.ru
+eldorado.ru
+citilink.ru
+market.yandex.ru
+leroymerlin.ru
+sportmaster.ru
+detmir.ru
+goldapple.ru
+apteka.ru
+eapteka.ru
+zdravcity.ru
+
+# --- Entertainment & Streaming ---
+kinopoisk.ru
+ivi.ru
+okko.tv
+more.tv
+start.ru
+premier.one
+wink.ru
+kion.ru
+amediateka.ru
+rutube.ru
+dzen.ru
+
+# --- Music ---
+music.yandex.ru
+zvuk.com
+
+# --- Food Delivery ---
+delivery-club.ru
+eda.yandex.ru
+samokat.ru
+lavka.yandex.ru
+sbermarket.ru
+vprok.ru
+utkonos.ru
+
+# --- Maps, Taxi & Transport ---
+taxi.yandex.ru
+maps.yandex.ru
+2gis.ru
+2gis.com
+navi.yandex.ru
+rasp.yandex.ru
+tutu.ru
+rzd.ru
+aeroflot.ru
+s7.ru
+pobeda.aero
+
+# --- Telecom ---
+mts.ru
+megafon.ru
+beeline.ru
+tele2.ru
+yota.ru
+rt.ru
+rostelecom.ru
+dom.ru
+ttk.ru
+
+# --- Tech, News & Media ---
+habr.com
+pikabu.ru
+lenta.ru
+rbc.ru
+ria.ru
+tass.ru
+kommersant.ru
+vedomosti.ru
+iz.ru
+kp.ru
+mk.ru
+gazeta.ru
+fontanka.ru
+3dnews.ru
+ixbt.com
+overclockers.ru
+
+# --- Business & Jobs ---
+1c.ru
+kontur.ru
+skbkontur.ru
+hh.ru
+headhunter.ru
+superjob.ru
+rabota.ru
+bitrix24.ru
+amocrm.ru
+moysklad.ru
+b2b-center.ru
+
+# --- Travel ---
+aviasales.ru
+ostrovok.ru
+sutochno.ru
+travel.yandex.ru
+
+# --- Education ---
+skillbox.ru
+geekbrains.ru
+netology.ru
+practicum.yandex.ru
+stepik.org
+foxford.ru
+
+# --- Infrastructure ---
+selectel.ru
+reg.ru
+nic.ru
+
+# ============================================
+# DIRECT IPs (paste into "Direct IPs" field)
+# ============================================
+# geoip:ru
+# geoip:private
+
+# ============================================
+# COMMA-SEPARATED FORMAT (for single-line input)
+# ============================================
+# yandex.ru,yandex.com,yandex.net,yandex.by,yandex.kz,ya.ru,yastatic.net,vk.com,vk.ru,ok.ru,odnoklassniki.ru,mail.ru,bk.ru,inbox.ru,list.ru,sberbank.ru,sber.ru,tinkoff.ru,tbank.ru,vtb.ru,alfa-bank.ru,gazprombank.ru,rosbank.ru,open.ru,rshb.ru,psbank.ru,sovcombank.ru,cbr.ru,gosuslugi.ru,nalog.ru,mos.ru,gov.ru,pfr.ru,fss.ru,ozon.ru,wildberries.ru,avito.ru,megamarket.ru,lamoda.ru,dns-shop.ru,mvideo.ru,eldorado.ru,citilink.ru,kinopoisk.ru,ivi.ru,okko.tv,more.tv,start.ru,premier.one,rutube.ru,dzen.ru,delivery-club.ru,samokat.ru,taxi.yandex.ru,maps.yandex.ru,2gis.ru,mts.ru,megafon.ru,beeline.ru,tele2.ru,yota.ru,rt.ru,dom.ru,habr.com,pikabu.ru,rbc.ru,lenta.ru,1c.ru,kontur.ru,hh.ru,superjob.ru,aviasales.ru,skillbox.ru,netology.ru,stepik.org,selectel.ru

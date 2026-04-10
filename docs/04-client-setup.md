@@ -1,0 +1,94 @@
+# 4. Настройка клиентов
+
+## Windows — Hiddify (реализовано)
+1. Скачать с [hiddify.com](https://hiddify.com/)
+2. Скопировать subscription-ссылку из панели 3X-UI
+3. В Hiddify нажать "+" -> "Буфер обмена"
+4. **Настройки -> Входящие -> Режим службы -> "Системный прокси"**
+5. Нажать кнопку подключения на главном экране
+6. Проверить IP на 2ip.ru
+
+> **Важно:** режим "VPN" может давать ошибку "failed to start background core". Использовать "Системный прокси".
+
+## Android — v2rayNG
+1. Установить из Google Play или [GitHub](https://github.com/2dust/v2rayNG)
+2. Нажать "+" -> "Scan QR code"
+3. Отсканировать QR-код из панели 3X-UI (reality-xxx)
+4. Нажать кнопку подключения
+5. Проверить IP на 2ip.ru
+
+## Android — Hiddify
+1. Установить из Google Play
+2. Добавить subscription через буфер обмена
+3. Подключиться
+
+## iOS — v2RayTun (текущий клиент)
+1. Установить из App Store
+2. Импортировать конфиг через QR или ссылку из 3X-UI
+3. **Критически важно для скорости**: настройка фрагментации:
+   - Fragment: включить
+   - Packets: `tlshello`
+   - **Length: `100-400`** (НЕ 1-5 — это убивает скорость!)
+   - Interval: `1-3` ms
+4. UDP Relay: включить (для QUIC/видео)
+
+> **Почему 100-400, а не 1-5?** TLS ClientHello ~ 300 байт. При 1-5 байт/фрагмент нужно 60-300 фрагментов на каждое соединение -> +300-600 мс overhead. Видео требует 20-50+ параллельных соединений -> таймаут. При 100-400 байт — 1-3 фрагмента -> 10-30 мс.
+
+## iOS — Shadowrocket (рекомендуется, лучшая скорость)
+Shadowrocket ($2.99 в App Store) — самый производительный iOS-клиент для VLESS:
+1. Установить из App Store (требует аккаунт в нероссийском App Store)
+2. Скопировать VLESS-ссылку из 3X-UI -> нажать "+"
+3. В настройках подключения включить:
+   - **UDP Relay**: On (критично для YouTube/видео — QUIC/HTTP3)
+   - **Sniffing**: On
+4. Проверить IP: 2ip.ru должен показать Швецию
+
+> Shadowrocket даёт +20-40% скорости по сравнению с v2RayTun на видеостриминге.
+
+## iOS — Streisand / FoXray / V2Box
+1. Установить из App Store
+2. Импортировать конфиг через QR или ссылку
+
+## macOS / Linux — Hiddify или nekoray
+1. Скачать с [hiddify.com](https://hiddify.com/) или [nekoray](https://github.com/MatsuriDayo/nekoray)
+2. Импортировать subscription
+3. Подключиться
+
+---
+
+## Layer 2: Relay через российский VPS
+
+Дополнительный сервер-relay для ситуаций когда шведский IP заблокирован.
+Подробные инструкции: [client-configs/relay-config.md](../client-configs/relay-config.md)
+
+Краткая настройка:
+1. Получить VLESS URI relay из `/root/relay-credentials.txt` на relay VPS
+2. Импортировать в клиент как обычный VLESS-сервер
+3. Рекомендуется настроить URL-test группу для auto-failover
+
+---
+
+## Layer 3: WebRTC OlcRTC (аварийный канал)
+
+> **Только Windows (через WSL2) и Linux.** iOS и Android НЕ поддерживаются.
+
+OlcRTC туннелирует трафик через WebRTC DataChannel в Яндекс.Телемост.
+Используется ТОЛЬКО когда все остальные слои (0, 1, 2) заблокированы.
+
+### Windows (WSL2)
+1. Убедитесь что WSL2 установлен: `wsl --status`
+2. Запустите `olcrtc-client.bat` из корня проекта
+3. Введите Conference ID и Encryption Key из Телемост
+4. SOCKS5h прокси будет доступен на `localhost:8809`
+5. В Hiddify: добавить SOCKS5 прокси → `127.0.0.1:8809`
+
+### Linux
+1. Запустите `bash olcrtc-wsl-client.sh`
+2. SOCKS5h на `localhost:8809`
+3. Проверка: `curl --socks5h localhost:8809 https://ifconfig.me`
+
+### iOS / Android — НЕ ПОДДЕРЖИВАЕТСЯ
+Layer 3 через WebRTC невозможен на мобильных устройствах:
+- Нет клиента OlcRTC для iOS/Android
+- iOS не поддерживает произвольный WebRTC DataChannel tunneling
+- **Для мобильных устройств Layer 2 (relay) — последний рубеж защиты**
