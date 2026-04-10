@@ -26,12 +26,12 @@
 
 Каждый следующий уровень активируется когда предыдущий заблокирован.
 
-| Метод | Роль | Статус |
-|-------|------|--------|
-| VLESS Reality (прямое, порты 443/8443/2053) | **Основной** | Работает |
-| Relay через Yandex Cloud (xHTTP, SNI: yandex.ru) | **Главный fallback** -- обход белых списков на мобильных | Работает |
-| WebRTC через Яндекс.Телемост (OlcRTC) | Аварийный (только Windows/Linux -- нет мобильных клиентов OlcRTC) | Скрипты готовы |
-| Cloudflare CDN (WebSocket через домен пользователя) | Backup для Wi-Fi (Cloudflare блокируется ТСПУ с 2025) | Работает только на Wi-Fi |
+| Layer | Метод | Роль | Статус |
+|-------|-------|------|--------|
+| 0 | VLESS Reality (прямое, порты 443/8443/2053) | **Основной** | Работает |
+| 1 | Relay через Yandex Cloud (xHTTP, SNI: yandex.ru) | **Главный fallback** -- обход белых списков на мобильных | Работает |
+| 2 | WebRTC через Яндекс.Телемост (OlcRTC) | Аварийный (пока только десктоп -- мобильное приложение OlcRTC ещё не создано) | Скрипты готовы |
+| 3 | Cloudflare CDN (WebSocket через домен пользователя) | Backup для Wi-Fi (Cloudflare блокируется ТСПУ с 2025) | Работает только на Wi-Fi |
 
 **Split routing:** Российские сайты (Yandex, VK, Госуслуги, банки) идут напрямую, минуя VPN.
 
@@ -61,19 +61,19 @@ vpn-setup/
 │   ├── v2rayng-routing.json     # Android (v2rayNG)
 │   ├── hiddify-routing.txt      # Windows (Hiddify)
 │   ├── xray-server-routing.json # Серверный routing (3X-UI)
-│   └── relay-config.md          # Настройка клиента для relay (Layer 2)
+│   └── relay-config.md          # Настройка клиента для relay (Layer 1)
 │
-├── cloudflare-worker/           # Cloudflare Worker -- CDN-фронтинг (Layer 1)
+├── cloudflare-worker/           # Cloudflare Worker -- CDN-фронтинг (Layer 3)
 │   ├── README.md                # Инструкция по деплою Worker
 │   ├── worker.js                # WebSocket-прокси (маскировка под "Coming Soon")
 │   └── wrangler.toml            # Конфигурация Wrangler
 │
 ├── quick-rebuild.sh             # Полная установка VPN с нуля на чистый VPS
 ├── deploy-multilayer.sh         # Деплой multi-layer inbound-ов на существующий VPS
-├── deploy-relay-sweden.sh       # Создание xHTTP inbound на зарубежном VPS (Layer 2)
-├── deploy-relay.sh              # Полный деплой relay на российском VPS -- generic (Layer 2)
-├── deploy-relay-yc.sh           # Провизия relay VM в Yandex Cloud (Layer 2, рекомендуемый)
-├── deploy-olcrtc-server.sh      # Установка OlcRTC-сервера на VPS (Layer 3)
+├── deploy-relay-sweden.sh       # Создание xHTTP inbound на зарубежном VPS (Layer 1)
+├── deploy-relay.sh              # Полный деплой relay на российском VPS -- generic (Layer 1)
+├── deploy-relay-yc.sh           # Провизия relay VM в Yandex Cloud (Layer 1, рекомендуемый)
+├── deploy-olcrtc-server.sh      # Установка OlcRTC-сервера на VPS (Layer 2)
 ├── yc-cloud-init.yaml.tpl       # Шаблон cloud-init для YC VM
 ├── rotate-relay-yc.sh           # Авто-рестарт preemptible VM в Yandex Cloud
 ├── monitor-relay.sh             # Health check обоих VPS
@@ -129,7 +129,7 @@ python ssh_exec.py status
 - Дать пользователю конфиг из `client-configs/` для его платформы
 - См. `client-configs/README.md` для инструкций
 
-### Layer 2: Relay через Yandex Cloud (рекомендуемый backup)
+### Layer 1: Relay через Yandex Cloud (рекомендуемый backup)
 
 **Когда нужен:** мобильная сеть с белыми списками, IP VPS заблокирован.
 **Почему работает:** IP-адреса Yandex Cloud в белых списках ТСПУ.
@@ -151,10 +151,10 @@ bash deploy-relay-yc.sh
 
 **Альтернатива Yandex Cloud:** `deploy-relay.sh` -- деплой relay на любой российский VPS (Timeweb, VDSina и др.)
 
-### Layer 3: WebRTC через Телемост (аварийный, только десктоп)
+### Layer 2: WebRTC через Телемост (аварийный, пока только десктоп)
 
 **Когда нужен:** полная блокировка, ничего не работает.
-**Ограничение:** только Windows (через WSL) и Linux. iOS/Android НЕ поддерживаются.
+**Ограничение:** пока только Windows (через WSL) и Linux. Мобильное приложение OlcRTC ещё не создано.
 **Скорость:** до 44 Mbps.
 
 ```bash
@@ -168,7 +168,7 @@ python ssh_exec.py deploy deploy-olcrtc-server.sh
 # 4. SOCKS5 прокси на localhost:8809 → подключить в Hiddify
 ```
 
-### Layer 1: Cloudflare CDN (legacy backup, только домашний Wi-Fi)
+### Layer 3: Cloudflare CDN (backup, только домашний Wi-Fi)
 
 **ВНИМАНИЕ:** Cloudflare активно блокируется ТСПУ с 2025. Работает только на домашнем Wi-Fi.
 
@@ -201,7 +201,7 @@ python ssh_exec.py backup              # Скачать бэкап x-ui.db
 python ssh_exec.py update-xray         # Обновить Xray-core до последней версии
 ```
 
-### Relay VPS (Layer 2)
+### Relay VPS (Layer 1)
 ```bash
 python ssh_exec.py -t relay status     # Статус relay VPS
 python ssh_exec.py -t relay restart    # Перезапуск relay
@@ -242,9 +242,9 @@ python ssh_exec.py deploy deploy-relay.sh
 | Подключается, но нет интернета | Проверить routing в клиенте | Убедиться что split routing настроен правильно |
 | Работает Wi-Fi, не работает LTE | Мобильный оператор блокирует агрессивнее | TLS-фрагментация 100-400 байт в настройках клиента |
 | Низкая скорость | `python ssh_exec.py exec "sysctl net.ipv4.tcp_congestion_control"` | Должен быть BBR. Если нет: `python ssh_exec.py deploy optimize-server.sh` |
-| VPS IP заблокирован | Не подключается ни через один порт | Переключиться на Layer 2 (Yandex Cloud relay) |
-| Мобильная сеть с белыми списками | Layer 0 не работает на LTE, работает на Wi-Fi | Layer 2: `deploy-relay-sweden.sh` + `deploy-relay-yc.sh` |
-| Ничего не работает | Ни один layer не помогает | Layer 3: WebRTC через Телемост (`deploy-olcrtc-server.sh`) |
+| VPS IP заблокирован | Не подключается ни через один порт | Переключиться на Layer 1 (Yandex Cloud relay) |
+| Мобильная сеть с белыми списками | Layer 0 не работает на LTE, работает на Wi-Fi | Layer 1: `deploy-relay-sweden.sh` + `deploy-relay-yc.sh` |
+| Ничего не работает | Ни один layer не помогает | Layer 2: WebRTC через Телемост (`deploy-olcrtc-server.sh`) |
 | 3X-UI панель недоступна | `python ssh_exec.py exec "systemctl status x-ui"` | `python ssh_exec.py exec "systemctl restart x-ui"` |
 
 ## Известные проблемы
@@ -255,8 +255,8 @@ python ssh_exec.py deploy deploy-relay.sh
 | Мобильные операторы (МТС, Мегафон) блокируют агрессивнее Wi-Fi | TLS-фрагментация 100-400 байт в клиенте |
 | SSH порт 22 блокируется ТСПУ к зарубежным IP | quick-rebuild.sh автоматически меняет на 49152 |
 | Hiddify режим "VPN" -- ошибка "failed to start background core" | Использовать режим "Системный прокси" |
-| Cloudflare CDN заблокирован ТСПУ с 2025 | Использовать Layer 2 (Yandex Cloud) вместо Layer 1 |
-| OlcRTC (Layer 3) работает только на десктопе | Для мобильных использовать Layer 2 |
+| Cloudflare CDN заблокирован ТСПУ с 2025 | Использовать Layer 1 (Yandex Cloud) вместо Layer 3 |
+| OlcRTC (Layer 2) пока только десктоп | Мобильное приложение ещё не создано. Для мобильных использовать Layer 1 |
 
 ## Документация
 
