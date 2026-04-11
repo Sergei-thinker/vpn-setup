@@ -51,6 +51,78 @@ apt install nginx -y
 
 ---
 
+## Утечки трафика в режиме системного прокси
+
+### Проблема
+
+При использовании VPN-клиента в режиме **"Системный прокси"** (вместо TUN/VPN) перехватывается **только TCP-трафик**. Весь UDP-трафик идёт напрямую через провайдера, вызывая три типа утечек:
+
+| Утечка | Протокол | Что происходит |
+|--------|----------|----------------|
+| **QUIC/HTTP3** | UDP:443 | Google, Cloudflare (Claude.ai), YouTube используют QUIC. Браузер пробует QUIC первым → трафик идёт мимо VPN → сервис видит реальный IP |
+| **DNS** | UDP:53 | DNS-запросы идут через ISP → резолвер выдаёт российскую геолокацию |
+| **WebRTC** | UDP/STUN | Браузер утекает реальный IP через WebRTC ICE candidates |
+
+**Результат:** 2ip.ru показывает VPN IP (тестирует через HTTP/TCP), но Google, Claude.ai и другие сервисы видят реальный российский IP (через QUIC/UDP).
+
+### Решение
+
+**TUN-режим обязателен.** TUN создаёт виртуальный сетевой адаптер, который перехватывает **весь** трафик (TCP + UDP + DNS + QUIC). Ни один пакет не утекает.
+
+В v2rayN: Settings → TUN Mode → включить.
+В Hiddify: Настройки → Входящие → Режим службы → "VPN" (не "Системный прокси").
+
+> Коммерческие VPN работают именно в TUN-режиме — поэтому у них нет этой проблемы.
+
+### Выбор ядра в v2rayN: sing-box вместо Xray
+
+v2rayN поддерживает два ядра: **Xray** и **sing-box**. Для TUN-режима рекомендуется **sing-box core**:
+
+| | Xray core | sing-box core |
+|---|-----------|---------------|
+| TUN | Через sing-box (отдельный процесс) | Нативный (один процесс) |
+| UDP/QUIC | Передаётся через SOCKS5 handoff → нестабильно | Нативная обработка → стабильно |
+| flow xtls-rprx-vision | Поддерживается | Не передаёт корректно |
+| **Рекомендация** | Не использовать с TUN | **Использовать** |
+
+**Настройка:** v2rayN → Settings → Core Type settings → выбрать **sing_box** → Confirm.
+
+> При использовании sing-box core `flow` на сервере должен быть **пустым** (без xtls-rprx-vision), иначе сервер отклонит подключение с ошибкой "client flow is empty".
+
+### Экстренный фикс (если TUN не работает)
+
+Если невозможно использовать TUN, минимизировать утечки:
+
+1. **Отключить QUIC в браузере:**
+   - Chrome: `chrome://flags/#enable-quic` → Disabled
+   - Edge: `edge://flags/#enable-quic` → Disabled
+   - Firefox: `about:config` → `network.http.http3.enable` → false
+
+2. **DNS-over-HTTPS в Windows:**
+   - Settings → Network → DNS → Manual
+   - Preferred: `1.1.1.1`, DNS over HTTPS: On
+   - Alternate: `8.8.8.8`, DNS over HTTPS: On
+
+3. **Заблокировать WebRTC:**
+   - Chrome/Edge: расширение "WebRTC Leak Prevent"
+   - Firefox: `about:config` → `media.peerconnection.enabled` → false
+
+### Чек-лист проверки утечек
+
+После подключения к VPN проверить:
+
+| Тест | URL | Ожидаемый результат |
+|------|-----|---------------------|
+| IP-адрес | https://browserleaks.com/ip | Шведский IP |
+| DNS leak | https://browserleaks.com/dns | DNS-серверы НЕ российские |
+| WebRTC leak | https://browserleaks.com/webrtc | Не показывает реальный IP |
+| Cloudflare geo | https://www.cloudflare.com/cdn-cgi/trace | `loc=SE` (не `RU`) |
+| Основной тест | https://2ip.ru | Шведский IP |
+
+Если хотя бы один тест показывает российский IP/DNS — есть утечка. Включите TUN-режим.
+
+---
+
 ## Оптимизация стабильности (для мобильных сетей)
 
 ### Проблема

@@ -6,7 +6,7 @@
 1. **Клонировал репозиторий** и просит "разверни VPN" -- перейти к деплою (проверить .env)
 2. **Скинул ссылку на этот репо** и просит развернуть VPN -- объяснить что нужно:
    - Арендовать VPS (~$2/мес): Aeza.net, 4VPS, Fornex (Швеция/Финляндия/Германия, Debian 12). НЕ Hetzner/OVH/DigitalOcean (заблокированы)
-   - Установить VPN-клиент: Hiddify (Windows/macOS, бесплатно), Shadowrocket (iOS, $2.99), v2rayNG (Android, бесплатно)
+   - Установить VPN-клиент: v2rayN (Windows, бесплатно), Shadowrocket (iOS, $2.99), v2rayNG (Android, бесплатно)
    - Дать IP-адрес VPS и SSH-доступ
    - Затем: клонировать репо, заполнить .env, запустить деплой
 3. **Спрашивает что это** -- объяснить кратко и предложить помочь с установкой
@@ -19,7 +19,7 @@
 
 - **Протокол:** VLESS + XTLS Reality (трафик неотличим от HTTPS к microsoft.com/google.com/apple.com)
 - **Панель управления:** 3X-UI + Xray-core
-- **Клиенты:** Hiddify (Windows/macOS), Shadowrocket (iOS), v2rayNG (Android)
+- **Клиенты:** v2rayN (Windows, рекомендуемый), Hiddify (альтернатива), Shadowrocket (iOS), v2rayNG (Android)
 - **Подробное руководство для ручной настройки:** [GUIDE.md](GUIDE.md)
 
 ## Архитектура
@@ -251,10 +251,14 @@ python ssh_exec.py deploy deploy-relay.sh
 
 | Проблема | Решение |
 |----------|---------|
-| `flow xtls-rprx-vision` вызывает panic XtlsPadding в Xray | Не использовать flow -- в конфигах уже отключён |
+| `flow xtls-rprx-vision` — sing-box core не передаёт flow | Отключён на сервере, без flow работает стабильно |
 | Мобильные операторы (МТС, Мегафон) блокируют агрессивнее Wi-Fi | TLS-фрагментация 100-400 байт в клиенте |
 | SSH порт 22 блокируется ТСПУ к зарубежным IP | quick-rebuild.sh автоматически меняет на 49152 |
-| Hiddify режим "VPN" -- ошибка "failed to start background core" | Использовать режим "Системный прокси" |
+| Hiddify "Системный прокси" — QUIC/UDP утечка, Google/Claude видят РФ | **Использовать v2rayN с TUN-режимом** (см. docs/05-security.md) |
+| v2rayN + Xray core — QUIC ломается через SOCKS5 handoff | **Использовать sing-box core** в v2rayN (Settings → Core Type) |
+| Hiddify режим "VPN" — ошибка "failed to start background core" | Использовать v2rayN вместо Hiddify |
+| NekoBox/Nekoray — проект архивирован (март 2025) | Мигрировать на v2rayN |
+| v2rayN нет кнопки "Отключить VPN" | Toggle "Enable Tun" внизу окна |
 | Cloudflare CDN заблокирован ТСПУ с 2025 | Использовать Layer 1 (Yandex Cloud) вместо Layer 3 |
 | OlcRTC (Layer 2) пока только десктоп | Мобильное приложение ещё не создано. Для мобильных использовать Layer 1 |
 
@@ -266,8 +270,9 @@ python ssh_exec.py deploy deploy-relay.sh
 | [docs/README.md](docs/README.md) | Индекс документации |
 | [docs/02-architecture.md](docs/02-architecture.md) | Архитектура, матрица inbound-ов |
 | [docs/03-server-setup.md](docs/03-server-setup.md) | Настройка VPS, 3X-UI, VLESS Reality |
-| [docs/04-client-setup.md](docs/04-client-setup.md) | Клиенты: Hiddify, Shadowrocket, v2rayNG |
-| [docs/05-security.md](docs/05-security.md) | Hardening, оптимизация для мобильных |
+| [docs/04-client-setup.md](docs/04-client-setup.md) | Клиенты: v2rayN (Windows), Shadowrocket (iOS), v2rayNG (Android) |
+| [docs/05-security.md](docs/05-security.md) | Hardening, утечки QUIC/UDP, sing-box core, оптимизация |
+| [client-configs/v2rayn-setup.md](client-configs/v2rayn-setup.md) | Пошаговая настройка v2rayN (Windows) |
 | [docs/07-advanced-layers.md](docs/07-advanced-layers.md) | CDN Cloudflare, Relay, WebRTC |
 | [docs/08-operations.md](docs/08-operations.md) | Мониторинг, troubleshooting |
 | [client-configs/README.md](client-configs/README.md) | Настройка split routing |
