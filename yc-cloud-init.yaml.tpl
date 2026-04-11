@@ -274,7 +274,7 @@ runcmd:
 
   # --- Write credentials file ---
   - |
-    cat > /root/relay-credentials.txt << 'CREDS'
+    cat > /root/relay-credentials.txt << CREDS
     === Yandex Cloud Relay Credentials ===
     Date: $(date -Iseconds)
     UUID: __RELAY_UUID__

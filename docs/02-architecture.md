@@ -62,7 +62,7 @@
 | CDN | Cloudflare (бесплатно) | Фронтинг для обхода белых списков |
 | SSL | Let's Encrypt (IP) | Шифрование панели управления |
 | Мониторинг | monitor-xray.sh + cron | Автоперезапуск при крашах |
-| Клиент Windows | Hiddify 4.1.1 | VPN-клиент с GUI + split routing |
+| Клиент Windows | v2rayN (+ sing-box core) | VPN-клиент с TUN-режимом + split routing |
 | Клиент Android | v2rayNG | Мобильный VPN-клиент + split routing |
 | Клиент iOS | Shadowrocket ($2.99) | Лучший iOS-клиент + split routing |
 | Управление | ssh_exec.py | SSH-утилита для управления сервером |

@@ -125,9 +125,11 @@ python ssh_exec.py status
 - Меняет SSH-порт на 49152 (обход блокировки ТСПУ)
 - Выводит VLESS URI для каждого inbound-а
 
-**После деплоя -- настроить split routing:**
-- Дать пользователю конфиг из `client-configs/` для его платформы
-- См. `client-configs/README.md` для инструкций
+**После деплоя -- настроить клиент:**
+- **Windows:** дать пользователю инструкцию `client-configs/v2rayn-setup.md` (v2rayN + TUN-режим обязателен)
+- **iOS:** Shadowrocket (рекомендуется) или v2RayTun — см. `docs/04-client-setup.md`
+- **Android:** v2rayNG — см. `docs/04-client-setup.md`
+- **Split routing:** дать конфиг из `client-configs/` для его платформы (см. `client-configs/README.md`)
 
 ### Layer 1: Relay через Yandex Cloud (рекомендуемый backup)
 

@@ -183,11 +183,11 @@ DPI видит: "Пользователь подключается к Microsoft 
 
 | Платформа | Клиент | Стоимость |
 |-----------|--------|-----------|
-| Windows | Hiddify | Бесплатно |
+| Windows | v2rayN (рекомендуемый) | Бесплатно |
 | iOS | Shadowrocket (лучший) | $2.99 |
 | iOS | v2RayTun (альтернатива) | Бесплатно |
 | Android | v2rayNG | Бесплатно |
-| macOS/Linux | Hiddify или nekoray | Бесплатно |
+| macOS/Linux | v2rayN | Бесплатно |
 
 **4. Аккаунт Cloudflare** (бесплатно) -- cloudflare.com
 
@@ -992,14 +992,31 @@ curl --socks5h localhost:8809 https://ifconfig.me
 
 ## 8. Настройка клиентов
 
-### 8.1. Windows -- Hiddify
+### 8.1. Windows -- v2rayN (рекомендуемый)
+
+1. Скачайте последнюю версию с [GitHub](https://github.com/2dust/v2rayN/releases) (файл `v2rayN-windows-64.zip`)
+2. Распакуйте в удобную папку (например, `C:\v2rayN`)
+3. **Запустите от имени администратора** (правый клик → Run as Administrator)
+4. Скопируйте subscription-ссылку из панели 3X-UI (Inbounds → ... → Subscription)
+5. **Подписки → Добавить подписку → Вставить URL → OK**
+6. **Обновите подписку** (Ctrl+U) — появится профиль VLESS Reality
+7. Включите **TUN-режим**: Settings → TUN Mode → включить (Stack: `Mixed`)
+8. Включите пресет **Россия**: Settings → Regional Presets → Russia
+9. Выберите сервер → нажмите кнопку подключения
+10. Проверьте IP на [2ip.ru](https://2ip.ru/) (должна быть Швеция)
+
+> **⚠️ TUN-режим обязателен!** Без TUN (в режиме системного прокси) QUIC/UDP трафик идёт напрямую — Google, Claude.ai и другие сервисы увидят ваш реальный IP.
+
+Подробная инструкция: [client-configs/v2rayn-setup.md](client-configs/v2rayn-setup.md)
+
+### 8.1.1. Windows -- Hiddify (альтернатива)
 
 1. Скачайте с [hiddify.com](https://hiddify.com/)
-2. Скопируйте subscription-ссылку из панели 3X-UI (Inbounds -> ... -> Subscription)
-3. В Hiddify нажмите **"+"** -> **"Буфер обмена"**
-4. **Настройки -> Входящие -> Режим службы -> "Системный прокси"**
+2. Скопируйте subscription-ссылку из панели 3X-UI (Inbounds → ... → Subscription)
+3. В Hiddify нажмите **"+"** → **"Буфер обмена"**
+4. **Настройки → Входящие → Режим службы → "VPN"** (НЕ "Системный прокси"!)
 
-> **Важно:** режим "VPN" может давать ошибку "failed to start background core". Используйте **"Системный прокси"**.
+> **Важно:** режим "VPN" может давать ошибку "failed to start background core". Если не удаётся — используйте **v2rayN**.
 
 5. Нажмите кнопку подключения
 6. Проверьте IP на [2ip.ru](https://2ip.ru/)
