@@ -15,6 +15,7 @@
 | 7 | [Продвинутые уровни](07-advanced-layers.md) | CDN Cloudflare, Relay через РФ VPS, аварийные методы |
 | 8 | [Обслуживание](08-operations.md) | Мониторинг, troubleshooting, disaster recovery |
 | 9 | [Статус](09-status.md) | Текущий статус проекта, бюджет, источники |
+| 10 | [VPN на роутере](10-router-setup.md) | Keenetic (XKeen), OpenWrt (PassWall2), ASUS Merlin (XrayUI) |
 
 ## Связанная документация
 

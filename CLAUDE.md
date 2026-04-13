@@ -53,7 +53,8 @@ vpn-setup/
 │   ├── 06-split-routing.md      # Split routing -- российские сайты напрямую
 │   ├── 07-advanced-layers.md    # CDN-фронтинг, Relay, аварийные методы
 │   ├── 08-operations.md         # Мониторинг, обслуживание, troubleshooting
-│   └── 09-status.md             # Текущий статус, бюджет, источники
+│   ├── 09-status.md             # Текущий статус, бюджет, источники
+│   └── 10-router-setup.md      # VPN на роутере (Keenetic, OpenWrt, ASUS Merlin)
 │
 ├── client-configs/              # Конфиги split routing для клиентов
 │   ├── README.md                # Инструкция по настройке routing
@@ -61,7 +62,8 @@ vpn-setup/
 │   ├── v2rayng-routing.json     # Android (v2rayNG)
 │   ├── hiddify-routing.txt      # Windows (Hiddify)
 │   ├── xray-server-routing.json # Серверный routing (3X-UI)
-│   └── relay-config.md          # Настройка клиента для relay (Layer 1)
+│   ├── relay-config.md          # Настройка клиента для relay (Layer 1)
+│   └── router-xray-config.json  # Xray JSON конфиг для роутера
 │
 ├── cloudflare-worker/           # Cloudflare Worker -- CDN-фронтинг (Layer 3)
 │   ├── README.md                # Инструкция по деплою Worker
@@ -233,8 +235,10 @@ python ssh_exec.py deploy deploy-relay.sh
 - **Android (v2rayNG):** `client-configs/v2rayng-routing.json`
 - **Windows (Hiddify):** `client-configs/hiddify-routing.txt`
 - **Серверный routing:** `client-configs/xray-server-routing.json`
+- **Роутер (Xray JSON):** `client-configs/router-xray-config.json`
 
 Инструкция по настройке: `client-configs/README.md`
+Настройка на роутере: `docs/10-router-setup.md`
 
 ## Troubleshooting
 
@@ -277,6 +281,7 @@ python ssh_exec.py deploy deploy-relay.sh
 | [client-configs/v2rayn-setup.md](client-configs/v2rayn-setup.md) | Пошаговая настройка v2rayN (Windows) |
 | [docs/07-advanced-layers.md](docs/07-advanced-layers.md) | CDN Cloudflare, Relay, WebRTC |
 | [docs/08-operations.md](docs/08-operations.md) | Мониторинг, troubleshooting |
+| [docs/10-router-setup.md](docs/10-router-setup.md) | VPN на роутере: Keenetic, OpenWrt, ASUS Merlin |
 | [client-configs/README.md](client-configs/README.md) | Настройка split routing |
 | [cloudflare-worker/README.md](cloudflare-worker/README.md) | Деплой Cloudflare Worker |
 
