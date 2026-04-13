@@ -1,4 +1,4 @@
-# VPN для обхода блокировок в России
+# Инструкци по настройке VPN
 
 > **English:** Multi-layer VPN system (VLESS Reality + Yandex Cloud Relay + WebRTC) for bypassing Russian internet censorship (ТСПУ/DPI). Designed to be deployed automatically via [Claude Code](https://claude.ai/claude-code). See below for Russian documentation.
 
