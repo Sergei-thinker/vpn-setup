@@ -15,9 +15,10 @@ v2rayN — лучший Windows-клиент для VLESS Reality: тот же X
    - Stack: `Mixed` (рекомендуется) или `gVisor`
 8. Включить пресет **Россия** для split routing:
    - Settings → Regional Presets → Russia
-   - Автоматически подтянет `geosite:ru-blocked` и `geosite:ru-available-only-inside`
+   - Settings → **Routing Settings** → выбрать набор **"RUv1-Всё, кроме РФ"** (НЕ "RUv1-Всё"!)
+   - "RUv1-Всё" гонит весь трафик через VPN — российские сервисы (Rutube, Кинопоиск, банки) будут блокировать по иностранному IP
 9. Выбрать сервер → нажать кнопку подключения
-10. Проверить IP на 2ip.ru (должна быть Швеция)
+10. Проверить: https://2ip.ru → Россия (RU), https://ifconfig.me → Швеция (SE)
 
 Подробная инструкция: [client-configs/v2rayn-setup.md](../client-configs/v2rayn-setup.md)
 
