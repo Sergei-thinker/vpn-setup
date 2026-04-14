@@ -483,7 +483,7 @@ EOF
         stream="${stream//\'/\'\'}"
         local sniffing_esc="${SNIFFING//\'/\'\'}"
 
-        sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate) VALUES (1, 0, 0, 0, '${remark}', 1, 0, '', ${port}, 'vless', '${settings}', '${stream}', '${tag}', '${sniffing_esc}', '');"
+        sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, '${remark}', 1, 0, '', ${port}, 'vless', '${settings}', '${stream}', '${tag}', '${sniffing_esc}');"
         ok "Inbound created: $remark (port $port)"
     }
 

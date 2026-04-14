@@ -116,7 +116,7 @@ def get_config(target: str = "sweden") -> dict:
 
     return {
         "host":     os.environ.get("VPN_HOST", ""),
-        "port":     int(os.environ.get("VPN_SSH_PORT", "49152")),
+        "port":     int(os.environ.get("VPN_SSH_PORT", "22")),
         "user":     os.environ.get("VPN_SSH_USER", "root"),
         "key_path": os.environ.get("VPN_SSH_KEY", default_key),
         "password": os.environ.get("VPN_SSH_PASS"),
@@ -129,9 +129,26 @@ def get_config(target: str = "sweden") -> dict:
 # ---------------------------------------------------------------------------
 
 def connect(cfg: dict) -> paramiko.SSHClient:
-    """Open an SSH connection using key auth (preferred) or password fallback."""
+    """Open an SSH connection using key auth (preferred) or password fallback.
+
+    Host key verification: loads system known_hosts first. If the host is not
+    yet known, the key is accepted *once* and saved (TOFU — Trust On First Use).
+    Subsequent connections will reject a changed host key, protecting against
+    MitM attacks.
+    """
     client = paramiko.SSHClient()
+    # Load existing known hosts for MitM protection
+    known_hosts = Path.home() / ".ssh" / "known_hosts"
+    if known_hosts.is_file():
+        try:
+            client.load_host_keys(str(known_hosts))
+        except Exception:
+            pass  # Corrupted known_hosts — fall through to AutoAdd
+    client.load_system_host_keys()
+    # TOFU: accept on first connect, reject if key changes later
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    # Save new host keys back after successful connection
+    _save_host_keys_after = str(known_hosts)
 
     key_path = Path(cfg["key_path"]).expanduser()
     # Also try common key locations
@@ -162,6 +179,10 @@ def connect(cfg: dict) -> paramiko.SSHClient:
                     timeout=15,
                 )
                 ok(f"Connected via SSH key: {kp}")
+                try:
+                    client.save_host_keys(_save_host_keys_after)
+                except Exception:
+                    pass
                 return client
             except paramiko.AuthenticationException:
                 warn(f"Key rejected: {kp}")
@@ -181,6 +202,10 @@ def connect(cfg: dict) -> paramiko.SSHClient:
                 timeout=15,
             )
             ok("Connected via password.")
+            try:
+                client.save_host_keys(_save_host_keys_after)
+            except Exception:
+                pass
             return client
         except paramiko.AuthenticationException:
             error("Password authentication failed.")

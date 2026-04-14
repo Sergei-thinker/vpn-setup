@@ -23,6 +23,7 @@
 # =============================================================================
 
 set -euo pipefail
+trap '' PIPE  # Ignore SIGPIPE (caused by tr|head pipes)
 
 # =============================================================================
 # ЦВЕТА И ФОРМАТИРОВАНИЕ
@@ -86,7 +87,7 @@ gen_short_id() {
 # Генерация случайной строки заданной длины (a-z, 0-9)
 rand_string() {
     local length="${1:-8}"
-    tr -dc 'a-z0-9' < /dev/urandom | head -c "$length"
+    openssl rand -hex "$length" | cut -c1-"$length"
 }
 
 # Получение публичного IP сервера
@@ -224,7 +225,8 @@ step 2 "Генерация ключей для relay-канала"
 info "Генерация x25519 ключей (отдельные от основных inbound-ов)..."
 KEYS=$("$XRAY_BIN" x25519 2>/dev/null)
 RELAY_PRIVATE_KEY=$(echo "$KEYS" | grep -i "private" | awk '{print $NF}')
-RELAY_PUBLIC_KEY=$(echo "$KEYS" | grep -i "public" | awk '{print $NF}')
+# Xray >=26.x outputs "Password" instead of "PublicKey"
+RELAY_PUBLIC_KEY=$(echo "$KEYS" | grep -iE "public|password" | awk '{print $NF}')
 
 if [ -z "$RELAY_PRIVATE_KEY" ] || [ -z "$RELAY_PUBLIC_KEY" ]; then
     error "Не удалось сгенерировать x25519 ключи!"
@@ -323,7 +325,7 @@ RELAY_ALLOCATE='{"strategy":"always","refresh":5,"concurrency":3}'
 
 # Вставка в БД
 info "Вставка inbound в БД..."
-sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate) VALUES (1, 0, 0, 0, '$RELAY_REMARK', 1, 0, '', $RELAY_PORT, 'vless', '$RELAY_SETTINGS', '$RELAY_STREAM', '$RELAY_TAG', '$RELAY_SNIFFING', '$RELAY_ALLOCATE');"
+sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, '$RELAY_REMARK', 1, 0, '', $RELAY_PORT, 'vless', '$RELAY_SETTINGS', '$RELAY_STREAM', '$RELAY_TAG', '$RELAY_SNIFFING');"
 
 success "Inbound '$RELAY_REMARK' создан: порт $RELAY_PORT, xHTTP Reality"
 
