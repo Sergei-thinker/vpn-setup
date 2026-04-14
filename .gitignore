@@ -21,7 +21,8 @@ backups/
 olcrtc/
 
 # IDE and OS
-.claude/
+.claude/settings.local.json
+.claude/memory/
 .DS_Store
 Thumbs.db
 *.log
