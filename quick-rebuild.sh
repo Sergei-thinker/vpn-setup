@@ -25,6 +25,7 @@
 # =============================================================================
 
 set -euo pipefail
+trap '' PIPE  # Ignore SIGPIPE (caused by tr|head pipes)
 
 # =============================================================================
 # ЦВЕТА И ФОРМАТИРОВАНИЕ
@@ -84,13 +85,13 @@ rand_range() {
 # Генерация случайной строки заданной длины (a-z, 0-9)
 rand_string() {
     local length=$1
-    tr -dc 'a-z0-9' < /dev/urandom | head -c "$length"
+    openssl rand -hex "$length" | cut -c1-"$length"
 }
 
-# Генерация случайного пароля (a-zA-Z0-9 + спецсимволы)
+# Генерация случайного пароля (a-zA-Z0-9)
 rand_password() {
     local length=$1
-    tr -dc 'A-Za-z0-9!@#%^&*_+-=' < /dev/urandom | head -c "$length"
+    openssl rand -base64 $(( length * 2 )) | tr -d '/+=\n' | cut -c1-"$length"
 }
 
 # Генерация UUID v4
@@ -350,6 +351,11 @@ DNSOverTLS=yes
 DNS
 
 systemctl enable systemd-resolved --now 2>/dev/null || true
+# Ensure /etc/resolv.conf works even if systemd-resolved is slow to start
+if ! curl -s --max-time 3 https://raw.githubusercontent.com > /dev/null 2>&1; then
+    rm -f /etc/resolv.conf
+    echo -e "nameserver 1.1.1.1\nnameserver 8.8.8.8" > /etc/resolv.conf
+fi
 success "DNS настроен (1.1.1.1, 8.8.8.8, DoT)"
 
 # --- 3.3 Nginx-камуфляж ---
@@ -436,7 +442,8 @@ info "Xray: $XRAY_BIN"
 # Генерация x25519 ключей для Reality
 KEYS=$("$XRAY_BIN" x25519 2>/dev/null)
 PRIVATE_KEY=$(echo "$KEYS" | grep -i "private" | awk '{print $NF}')
-PUBLIC_KEY=$(echo "$KEYS" | grep -i "public" | awk '{print $NF}')
+# Xray >=26.x outputs "Password" instead of "PublicKey"
+PUBLIC_KEY=$(echo "$KEYS" | grep -iE "public|password" | awk '{print $NF}')
 
 if [ -z "$PRIVATE_KEY" ] || [ -z "$PUBLIC_KEY" ]; then
     error "Не удалось сгенерировать x25519 ключи!"
@@ -539,7 +546,7 @@ EOJSON
 SNIFFING='{"enabled":true,"destOverride":["http","tls","quic"],"metadataOnly":false,"routeOnly":false}'
 ALLOCATE='{"strategy":"always","refresh":5,"concurrency":3}'
 
-sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate) VALUES (1, 0, 0, 0, 'reality-main', 1, 0, '', 443, 'vless', '$SETTINGS_MAIN', '$STREAM_MAIN', 'inbound-443', '$SNIFFING', '$ALLOCATE');"
+sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, 'reality-main', 1, 0, '', 443, 'vless', '$SETTINGS_MAIN', '$STREAM_MAIN', 'inbound-443', '$SNIFFING');"
 
 success "reality-main: порт 443, SNI www.microsoft.com"
 
@@ -598,7 +605,7 @@ STREAM_GOOGLE=$(cat <<EOJSON
 EOJSON
 )
 
-sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate) VALUES (1, 0, 0, 0, 'reality-google', 1, 0, '', 8443, 'vless', '$SETTINGS_GOOGLE', '$STREAM_GOOGLE', 'inbound-8443', '$SNIFFING', '$ALLOCATE');"
+sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, 'reality-google', 1, 0, '', 8443, 'vless', '$SETTINGS_GOOGLE', '$STREAM_GOOGLE', 'inbound-8443', '$SNIFFING');"
 
 success "reality-google: порт 8443, SNI dl.google.com"
 
@@ -657,7 +664,7 @@ STREAM_APPLE=$(cat <<EOJSON
 EOJSON
 )
 
-sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate) VALUES (1, 0, 0, 0, 'reality-apple', 1, 0, '', 2053, 'vless', '$SETTINGS_APPLE', '$STREAM_APPLE', 'inbound-2053', '$SNIFFING', '$ALLOCATE');"
+sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, 'reality-apple', 1, 0, '', 2053, 'vless', '$SETTINGS_APPLE', '$STREAM_APPLE', 'inbound-2053', '$SNIFFING');"
 
 success "reality-apple: порт 2053, SNI www.apple.com"
 
@@ -703,7 +710,7 @@ STREAM_WS=$(cat <<EOJSON
 EOJSON
 )
 
-sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate) VALUES (1, 0, 0, 0, 'ws-cloudflare', 1, 0, '', 2082, 'vless', '$SETTINGS_WS', '$STREAM_WS', 'inbound-2082', '$SNIFFING', '$ALLOCATE');"
+sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, 'ws-cloudflare', 1, 0, '', 2082, 'vless', '$SETTINGS_WS', '$STREAM_WS', 'inbound-2082', '$SNIFFING');"
 
 success "ws-cloudflare: порт 2082, WebSocket, path=$WS_PATH_INBOUND"
 
