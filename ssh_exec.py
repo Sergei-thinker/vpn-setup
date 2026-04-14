@@ -75,6 +75,15 @@ def load_dotenv(path: str | Path | None = None) -> None:
     if not path.is_file():
         return
 
+    # Warn if .env has world-readable permissions (Unix only)
+    if os.name != "nt":
+        try:
+            mode = oct(path.stat().st_mode)[-3:]
+            if mode not in ("600", "400", "640", "440"):
+                warn(f".env has permissive mode {mode} — consider: chmod 600 {path}")
+        except OSError:
+            pass
+
     with open(path, encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()
@@ -128,6 +137,27 @@ def get_config(target: str = "sweden") -> dict:
 # SSH connection
 # ---------------------------------------------------------------------------
 
+class _InteractiveTOFU(paramiko.MissingHostKeyPolicy):
+    """TOFU with interactive fingerprint confirmation (when TTY is available)."""
+
+    def missing_host_key(self, client, hostname, key):
+        fp = key.get_fingerprint().hex()
+        fp_fmt = ":".join(fp[i:i + 2] for i in range(0, len(fp), 2))
+        warn(f"Unknown host key for {hostname}")
+        print(f"  Key type:    {key.get_name()}")
+        print(f"  Fingerprint: {fp_fmt}")
+        try:
+            answer = input("  Accept and save? (yes/no): ").strip().lower()
+        except EOFError:
+            raise paramiko.SSHException(
+                f"Host key verification failed for {hostname}"
+            )
+        if answer != "yes":
+            raise paramiko.SSHException(
+                f"Host key rejected by user for {hostname}"
+            )
+
+
 def connect(cfg: dict) -> paramiko.SSHClient:
     """Open an SSH connection using key auth (preferred) or password fallback.
 
@@ -145,8 +175,12 @@ def connect(cfg: dict) -> paramiko.SSHClient:
         except Exception:
             pass  # Corrupted known_hosts — fall through to AutoAdd
     client.load_system_host_keys()
-    # TOFU: accept on first connect, reject if key changes later
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    # TOFU: show fingerprint and require confirmation on first connect;
+    # fall back to auto-accept when stdin is not a terminal (scripts).
+    if sys.stdin.isatty():
+        client.set_missing_host_key_policy(_InteractiveTOFU())
+    else:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     # Save new host keys back after successful connection
     _save_host_keys_after = str(known_hosts)
 
@@ -422,7 +456,9 @@ def cmd_update_xray(args, cfg):
     try:
         print(f"\n{Color.BOLD}=== Updating xray-core ==={Color.RESET}")
         run_commands(client, [
-            "bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) --update",
+            "curl -fsSL https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh -o /tmp/3x-ui-update.sh && "
+            "{ head -1 /tmp/3x-ui-update.sh | grep -q '^#!/' || { echo 'ERROR: invalid installer'; exit 1; }; } && "
+            "bash /tmp/3x-ui-update.sh --update && rm -f /tmp/3x-ui-update.sh",
         ])
         ok("Update command executed. Check output above for results.")
     finally:

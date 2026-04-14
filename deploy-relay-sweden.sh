@@ -43,6 +43,11 @@ error()   { echo -e "${RED}[ERROR]${NC} $*"; }
 step()    { echo -e "\n${CYAN}${BOLD}=== [$1/$TOTAL_STEPS] $2 ===${NC}"; }
 separator() { echo -e "${CYAN}──────────────────────────────────────────────────────────${NC}"; }
 
+# Escape single quotes for safe SQLite interpolation
+sql_escape() {
+    printf '%s' "$1" | sed "s/'/''/g"
+}
+
 # =============================================================================
 # ОБРАБОТКА ОШИБОК
 # =============================================================================
@@ -262,7 +267,8 @@ sleep 2
 
 # Удаляем существующий relay inbound (идемпотентность)
 info "Удаление существующего inbound '$RELAY_TAG' (если есть)..."
-sqlite3 "$XUI_DB" "DELETE FROM inbounds WHERE tag = '$RELAY_TAG';" 2>/dev/null || true
+RELAY_TAG_ESC=$(sql_escape "$RELAY_TAG")
+sqlite3 "$XUI_DB" "DELETE FROM inbounds WHERE tag = '$RELAY_TAG_ESC';" 2>/dev/null || true
 success "Старый inbound удалён (или не существовал)"
 
 # Формируем JSON для settings
@@ -323,9 +329,13 @@ EOJSON
 RELAY_SNIFFING='{"enabled":true,"destOverride":["http","tls","quic"],"metadataOnly":false,"routeOnly":false}'
 RELAY_ALLOCATE='{"strategy":"always","refresh":5,"concurrency":3}'
 
-# Вставка в БД
+# Вставка в БД — экранируем строковые значения для SQLite
 info "Вставка inbound в БД..."
-sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, '$RELAY_REMARK', 1, 0, '', $RELAY_PORT, 'vless', '$RELAY_SETTINGS', '$RELAY_STREAM', '$RELAY_TAG', '$RELAY_SNIFFING');"
+RELAY_REMARK_ESC=$(sql_escape "$RELAY_REMARK")
+RELAY_SETTINGS_ESC=$(sql_escape "$RELAY_SETTINGS")
+RELAY_STREAM_ESC=$(sql_escape "$RELAY_STREAM")
+RELAY_SNIFFING_ESC=$(sql_escape "$RELAY_SNIFFING")
+sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, '$RELAY_REMARK_ESC', 1, 0, '', $RELAY_PORT, 'vless', '$RELAY_SETTINGS_ESC', '$RELAY_STREAM_ESC', '$RELAY_TAG_ESC', '$RELAY_SNIFFING_ESC');"
 
 success "Inbound '$RELAY_REMARK' создан: порт $RELAY_PORT, xHTTP Reality"
 
@@ -366,7 +376,7 @@ else
 fi
 
 # Проверяем что inbound создан
-INBOUND_COUNT=$(sqlite3 "$XUI_DB" "SELECT COUNT(*) FROM inbounds WHERE tag = '$RELAY_TAG';")
+INBOUND_COUNT=$(sqlite3 "$XUI_DB" "SELECT COUNT(*) FROM inbounds WHERE tag = '$RELAY_TAG_ESC';")
 if [ "$INBOUND_COUNT" -eq 1 ]; then
     success "Inbound '$RELAY_TAG' подтверждён в БД"
 else

@@ -9,3 +9,6 @@ BACKEND_HOST = "YOUR_VPS_IP"
 BACKEND_PORT = "2082"
 # IMPORTANT: change this to a long random string before deploying!
 WS_PATH = "/ws-vless-YOUR_SECRET_PATH"
+# Optional: token-based auth (set via `wrangler secret put WS_AUTH_TOKEN`)
+# If set, clients must send X-Auth-Token header or ?token= query param.
+# WS_AUTH_TOKEN = ""

@@ -23,6 +23,11 @@ warn() { echo -e "  ${YELLOW}[WARN]${NC} $*"; }
 fail() { echo -e "  ${RED}[FAIL]${NC} $*"; exit 1; }
 step() { echo -e "\n${CYAN}${BOLD}[$1/$TOTAL_STEPS] $2${NC}"; }
 
+# Escape single quotes for safe SQLite interpolation
+sql_escape() {
+    printf '%s' "$1" | sed "s/'/''/g"
+}
+
 TOTAL_STEPS=10
 CREDS_FILE="/root/vpn-credentials.txt"
 XUI_DB="/etc/x-ui/x-ui.db"
@@ -365,8 +370,8 @@ if [[ -f "$XUI_DB" ]] && command -v sqlite3 &>/dev/null; then
 }
 XRAY_JSON
 )
-    # Escape for sqlite: double single quotes
-    ROUTING_ESCAPED="${ROUTING_CONFIG//\'/\'\'}"
+    # Escape for sqlite
+    ROUTING_ESCAPED=$(sql_escape "$ROUTING_CONFIG")
 
     # Check if key exists
     EXISTING=$(sqlite3 "$XUI_DB" "SELECT COUNT(*) FROM settings WHERE key='xrayTemplateConfig';" 2>/dev/null || echo "0")
@@ -479,11 +484,13 @@ EOF
         fi
 
         # Escape single quotes for sqlite
-        settings="${settings//\'/\'\'}"
-        stream="${stream//\'/\'\'}"
-        local sniffing_esc="${SNIFFING//\'/\'\'}"
+        local remark_esc=$(sql_escape "$remark")
+        local settings_esc=$(sql_escape "$settings")
+        local stream_esc=$(sql_escape "$stream")
+        local tag_esc=$(sql_escape "$tag")
+        local sniffing_esc=$(sql_escape "$SNIFFING")
 
-        sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, '${remark}', 1, 0, '', ${port}, 'vless', '${settings}', '${stream}', '${tag}', '${sniffing_esc}');"
+        sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, '${remark_esc}', 1, 0, '', ${port}, 'vless', '${settings_esc}', '${stream_esc}', '${tag_esc}', '${sniffing_esc}');"
         ok "Inbound created: $remark (port $port)"
     }
 

@@ -298,8 +298,14 @@ read -rp "Введите новый Conference ID: " NEW_ID
 read -rp "Введите Encryption Key: " NEW_KEY
 
 if [ -n "$NEW_ID" ]; then
-    sed -i "s/^CONFERENCE_ID=.*/CONFERENCE_ID=${NEW_ID}/" /etc/olcrtc/conference.env
-    sed -i "s/^ENCRYPTION_KEY=.*/ENCRYPTION_KEY=${NEW_KEY}/" /etc/olcrtc/conference.env
+    # Use awk to avoid sed injection via special characters in user input
+    CONFIG="/etc/olcrtc/conference.env"
+    awk -v id="$NEW_ID" -v key="$NEW_KEY" '
+        /^CONFERENCE_ID=/ { print "CONFERENCE_ID=" id; next }
+        /^ENCRYPTION_KEY=/ { print "ENCRYPTION_KEY=" key; next }
+        { print }
+    ' "$CONFIG" > "${CONFIG}.tmp" && mv "${CONFIG}.tmp" "$CONFIG"
+    chmod 600 "$CONFIG"
     echo ""
     echo "[OK] Конференция обновлена: $NEW_ID"
     echo "[INFO] Перезапустите сервис: systemctl restart olcrtc-server"

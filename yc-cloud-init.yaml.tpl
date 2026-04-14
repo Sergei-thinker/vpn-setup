@@ -246,7 +246,16 @@ runcmd:
   - chown -R nobody:nogroup /var/log/xray
 
   # --- Install Xray ---
-  - bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+  - |
+    XRAY_INSTALL="/tmp/xray-install.sh"
+    curl -fsSL "https://github.com/XTLS/Xray-install/raw/main/install-release.sh" -o "$XRAY_INSTALL"
+    if [ -s "$XRAY_INSTALL" ] && head -1 "$XRAY_INSTALL" | grep -q '^#!/'; then
+        bash "$XRAY_INSTALL" @ install
+        rm -f "$XRAY_INSTALL"
+    else
+        echo "ERROR: Xray installer download failed or invalid" >&2
+        exit 1
+    fi
 
   # --- Enable and start services ---
   - systemctl enable xray

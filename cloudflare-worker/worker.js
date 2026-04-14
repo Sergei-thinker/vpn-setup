@@ -59,6 +59,18 @@ export default {
         return landingPage();
       }
 
+      // ── Optional token authentication ────────────────────────────
+      // If WS_AUTH_TOKEN is set, require it via header or query param.
+      // Without a token, path-only security is easily brute-forced.
+      const authToken = env.WS_AUTH_TOKEN;
+      if (authToken) {
+        const clientToken = request.headers.get('X-Auth-Token')
+            || url.searchParams.get('token');
+        if (clientToken !== authToken) {
+          return landingPage();
+        }
+      }
+
       // ── Require WebSocket upgrade ────────────────────────────────
       const upgradeHeader = request.headers.get('Upgrade');
       if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') {

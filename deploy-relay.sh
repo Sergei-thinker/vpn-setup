@@ -290,8 +290,15 @@ if [ -f "$XRAY_BIN" ]; then
     warn "Xray уже установлен (версия: $CURRENT_VERSION). Обновляем..."
 fi
 
-info "Скачивание и установка Xray-core..."
-bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+info "Скачивание Xray installer..."
+XRAY_INSTALL_SCRIPT="/tmp/xray-install.sh"
+curl -fsSL "https://github.com/XTLS/Xray-install/raw/main/install-release.sh" -o "$XRAY_INSTALL_SCRIPT"
+if [ ! -s "$XRAY_INSTALL_SCRIPT" ] || ! head -1 "$XRAY_INSTALL_SCRIPT" | grep -q '^#!/'; then
+    error "Xray installer download failed or file is invalid"
+    exit 1
+fi
+bash "$XRAY_INSTALL_SCRIPT" @ install
+rm -f "$XRAY_INSTALL_SCRIPT"
 
 # Проверка установки
 if [ ! -f "$XRAY_BIN" ]; then

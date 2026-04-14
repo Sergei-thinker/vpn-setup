@@ -114,6 +114,11 @@ get_public_ip() {
         || hostname -I | awk '{print $1}'
 }
 
+# Escape single quotes for safe SQLite interpolation
+sql_escape() {
+    printf '%s' "$1" | sed "s/'/''/g"
+}
+
 # Проверка что скрипт запущен от root
 check_root() {
     if [ "$(id -u)" -ne 0 ]; then
@@ -267,7 +272,11 @@ else
     #   4. "set up the panel port" → $PANEL_PORT
     #
     # Используем heredoc для передачи ответов
-    curl -Ls "$XUI_INSTALL_URL" -o /tmp/3x-ui-install.sh
+    curl -fsSL "$XUI_INSTALL_URL" -o /tmp/3x-ui-install.sh
+    if [ ! -s /tmp/3x-ui-install.sh ] || ! head -1 /tmp/3x-ui-install.sh | grep -q '^#!/'; then
+        error "3X-UI installer download failed or file is invalid"
+        exit 1
+    fi
 
     printf 'y\n%s\n%s\n%s\n' "$PANEL_USER" "$PANEL_PASS" "$PANEL_PORT" \
         | bash /tmp/3x-ui-install.sh
@@ -294,11 +303,13 @@ x-ui setting -port "$PANEL_PORT" 2>/dev/null || true
 
 # Настроить URI path панели и subscription
 if [ -f "$XUI_DB" ]; then
-    sqlite3 "$XUI_DB" "UPDATE settings SET value='$PANEL_PATH' WHERE key='webBasePath';" 2>/dev/null || true
-    sqlite3 "$XUI_DB" "UPDATE settings SET value='$SUB_PATH' WHERE key='subPath';" 2>/dev/null || true
+    PANEL_PATH_ESC=$(sql_escape "$PANEL_PATH")
+    SUB_PATH_ESC=$(sql_escape "$SUB_PATH")
+    sqlite3 "$XUI_DB" "UPDATE settings SET value='$PANEL_PATH_ESC' WHERE key='webBasePath';" 2>/dev/null || true
+    sqlite3 "$XUI_DB" "UPDATE settings SET value='$SUB_PATH_ESC' WHERE key='subPath';" 2>/dev/null || true
     # Включить subscription
     sqlite3 "$XUI_DB" "UPDATE settings SET value='true' WHERE key='subEnable';" 2>/dev/null || true
-    sqlite3 "$XUI_DB" "UPDATE settings SET value='$SUB_PATH' WHERE key='subURI';" 2>/dev/null || true
+    sqlite3 "$XUI_DB" "UPDATE settings SET value='$SUB_PATH_ESC' WHERE key='subURI';" 2>/dev/null || true
 fi
 
 success "3X-UI настроена: порт=$PANEL_PORT, path=$PANEL_PATH"
@@ -546,7 +557,12 @@ EOJSON
 SNIFFING='{"enabled":true,"destOverride":["http","tls","quic"],"metadataOnly":false,"routeOnly":false}'
 ALLOCATE='{"strategy":"always","refresh":5,"concurrency":3}'
 
-sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, 'reality-main', 1, 0, '', 443, 'vless', '$SETTINGS_MAIN', '$STREAM_MAIN', 'inbound-443', '$SNIFFING');"
+# Escape string values for SQLite
+SETTINGS_MAIN_ESC=$(sql_escape "$SETTINGS_MAIN")
+STREAM_MAIN_ESC=$(sql_escape "$STREAM_MAIN")
+SNIFFING_ESC=$(sql_escape "$SNIFFING")
+
+sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, 'reality-main', 1, 0, '', 443, 'vless', '$SETTINGS_MAIN_ESC', '$STREAM_MAIN_ESC', 'inbound-443', '$SNIFFING_ESC');"
 
 success "reality-main: порт 443, SNI www.microsoft.com"
 
@@ -605,7 +621,10 @@ STREAM_GOOGLE=$(cat <<EOJSON
 EOJSON
 )
 
-sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, 'reality-google', 1, 0, '', 8443, 'vless', '$SETTINGS_GOOGLE', '$STREAM_GOOGLE', 'inbound-8443', '$SNIFFING');"
+SETTINGS_GOOGLE_ESC=$(sql_escape "$SETTINGS_GOOGLE")
+STREAM_GOOGLE_ESC=$(sql_escape "$STREAM_GOOGLE")
+
+sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, 'reality-google', 1, 0, '', 8443, 'vless', '$SETTINGS_GOOGLE_ESC', '$STREAM_GOOGLE_ESC', 'inbound-8443', '$SNIFFING_ESC');"
 
 success "reality-google: порт 8443, SNI dl.google.com"
 
@@ -664,7 +683,10 @@ STREAM_APPLE=$(cat <<EOJSON
 EOJSON
 )
 
-sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, 'reality-apple', 1, 0, '', 2053, 'vless', '$SETTINGS_APPLE', '$STREAM_APPLE', 'inbound-2053', '$SNIFFING');"
+SETTINGS_APPLE_ESC=$(sql_escape "$SETTINGS_APPLE")
+STREAM_APPLE_ESC=$(sql_escape "$STREAM_APPLE")
+
+sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, 'reality-apple', 1, 0, '', 2053, 'vless', '$SETTINGS_APPLE_ESC', '$STREAM_APPLE_ESC', 'inbound-2053', '$SNIFFING_ESC');"
 
 success "reality-apple: порт 2053, SNI www.apple.com"
 
@@ -710,14 +732,18 @@ STREAM_WS=$(cat <<EOJSON
 EOJSON
 )
 
-sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, 'ws-cloudflare', 1, 0, '', 2082, 'vless', '$SETTINGS_WS', '$STREAM_WS', 'inbound-2082', '$SNIFFING');"
+SETTINGS_WS_ESC=$(sql_escape "$SETTINGS_WS")
+STREAM_WS_ESC=$(sql_escape "$STREAM_WS")
+
+sqlite3 "$XUI_DB" "INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing) VALUES (1, 0, 0, 0, 'ws-cloudflare', 1, 0, '', 2082, 'vless', '$SETTINGS_WS_ESC', '$STREAM_WS_ESC', 'inbound-2082', '$SNIFFING_ESC');"
 
 success "ws-cloudflare: порт 2082, WebSocket, path=$WS_PATH_INBOUND"
 
 # Настройка Xray DNS в 3X-UI
 info "Настройка Xray DNS..."
 XRAY_DNS='{"dns":{"servers":["https+local://1.1.1.1/dns-query","https+local://8.8.8.8/dns-query"],"queryStrategy":"UseIPv4"}}'
-sqlite3 "$XUI_DB" "UPDATE settings SET value='$XRAY_DNS' WHERE key='xrayTemplateConfig';" 2>/dev/null || true
+XRAY_DNS_ESC=$(sql_escape "$XRAY_DNS")
+sqlite3 "$XUI_DB" "UPDATE settings SET value='$XRAY_DNS_ESC' WHERE key='xrayTemplateConfig';" 2>/dev/null || true
 
 success "Все 4 inbound-а созданы"
 
