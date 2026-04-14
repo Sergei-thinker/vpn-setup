@@ -1,6 +1,6 @@
 #cloud-config
 # =============================================================================
-#  CLOUD-INIT TEMPLATE — Yandex Cloud Relay VM (Layer 2)
+#  CLOUD-INIT TEMPLATE — Yandex Cloud Relay VM (Layer 1)
 # =============================================================================
 #
 #  Этот шаблон используется deploy-relay-yc.sh для инициализации VM.

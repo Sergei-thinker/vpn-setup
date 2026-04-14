@@ -1,4 +1,4 @@
-# Layer 2: Russian Relay VPS — Конфигурация клиентов
+# Layer 1: Russian Relay VPS — Конфигурация клиентов
 
 ## Обзор
 

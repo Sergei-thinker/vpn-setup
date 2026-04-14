@@ -305,7 +305,7 @@ def cmd_relay_status(args, cfg):
     """Show combined status of both VPSes (Sweden + Relay)."""
     for target_name in ("sweden", "relay"):
         target_cfg = get_config(target_name)
-        label = "Swedish VPS (Layer 0/1)" if target_name == "sweden" else "Russian Relay (Layer 2)"
+        label = "Swedish VPS (Layer 0)" if target_name == "sweden" else "Russian Relay (Layer 1)"
 
         if not target_cfg.get("host"):
             print(f"\n{Color.YELLOW}=== {label}: not configured (RELAY_HOST empty) ==={Color.RESET}")

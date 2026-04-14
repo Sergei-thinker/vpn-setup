@@ -128,7 +128,7 @@ echo -e "${BOLD}${CYAN}║   VPN Relay Health Check                 ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo -e "  Время: $(date '+%Y-%m-%d %H:%M:%S')"
 
-check_vps "Swedish VPS (Layer 0/1)" "$VPN_HOST" "$VPN_SSH_PORT" "$VPN_SSH_USER" "$VPN_SSH_KEY" "x-ui"
+check_vps "Swedish VPS (Layer 0)" "$VPN_HOST" "$VPN_SSH_PORT" "$VPN_SSH_USER" "$VPN_SSH_KEY" "x-ui"
 
 # Yandex Cloud: дополнительная проверка через yc CLI
 if [ "$RELAY_PROVIDER" = "yandex" ] && command -v yc &>/dev/null; then
@@ -170,7 +170,7 @@ if ifaces:
     fi
 fi
 
-check_vps "Russian Relay (Layer 2)" "$RELAY_HOST" "$RELAY_SSH_PORT" "$RELAY_SSH_USER" "$RELAY_SSH_KEY" "xray"
+check_vps "Russian Relay (Layer 1)" "$RELAY_HOST" "$RELAY_SSH_PORT" "$RELAY_SSH_USER" "$RELAY_SSH_KEY" "xray"
 
 # ---------------------------------------------------------------------------
 # Итог

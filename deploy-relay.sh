@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-#  DEPLOY RELAY — Настройка Xray Relay на российском VPS (Layer 2)
+#  DEPLOY RELAY — Настройка Xray Relay на российском VPS (Layer 1)
 # =============================================================================
 #
 #  Сценарий использования:
@@ -133,7 +133,7 @@ check_os() {
 show_help() {
     echo "Использование: bash deploy-relay.sh [ОПЦИИ]"
     echo ""
-    echo "Настройка Xray Relay на российском VPS (Layer 2)."
+    echo "Настройка Xray Relay на российском VPS (Layer 1)."
     echo "Клиент → RU Relay (VLESS Reality) → SE VPS (VLESS xHTTP) → Интернет"
     echo ""
     echo "Обязательные параметры:"
@@ -762,7 +762,7 @@ echo "     UUID: $SWEDEN_UUID, PublicKey/ShortId от шведского VPS"
 echo "  2. Скопируйте VLESS URI в клиент (Hiddify / v2rayNG / Shadowrocket)"
 echo "  3. В клиенте включите TLS-фрагментацию: tlshello, 100-400, 1-3"
 echo "  4. Проверьте IP на 2ip.ru — должен показывать IP шведского VPS"
-echo "  5. Если Layer 2 не нужен — используйте Layer 0 (прямое подключение к SE)"
+echo "  5. Если Layer 1 не нужен — используйте Layer 0 (прямое подключение к SE)"
 echo ""
 echo -e "${BLUE}Управление:${NC}"
 echo "  systemctl status xray    — статус Xray"

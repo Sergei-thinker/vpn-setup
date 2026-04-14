@@ -15,26 +15,26 @@
 │  └──────────┘   Маскировка: HTTPS к Microsoft   └──────────┘      │
 │                              Google, Apple                          │
 │                                                                     │
-│  Layer 1: CDN-ФРОНТИНГ ЧЕРЕЗ CLOUDFLARE (бесплатно)               │
-│  ┌──────────┐   HTTPS/WSS    ┌───────────┐      ┌──────────┐     │
-│  │Устройства│ ────────────  │ Cloudflare │ ──── │ VPS SWE  │──Net│
-│  └──────────┘  SNI: CF домен │  CDN (WL)  │      └──────────┘     │
-│                               └───────────┘                         │
-│  IP Cloudflare в белых списках ТСПУ!                                │
-│                                                                     │
-│  Layer 2: RELAY ЧЕРЕЗ РОССИЙСКИЙ VPS                               │
+│  Layer 1: RELAY ЧЕРЕЗ YANDEX CLOUD / РОССИЙСКИЙ VPS               │
 │  ┌──────────┐  VLESS  ┌──────────┐  xhttp  ┌──────────┐          │
 │  │Устройства│ ────── │ VPS в РФ │ ─────── │ VPS SWE  │──Net     │
 │  └──────────┘         │ (relay)  │          └──────────┘          │
 │                        └──────────┘                                 │
-│  ТСПУ не трогает внутренний трафик РФ→РФ                           │
+│  IP Yandex Cloud в белых списках ТСПУ. Главный fallback.           │
 │                                                                     │
-│  Layer 3: АВАРИЙНЫЙ — WebRTC ЧЕРЕЗ ЯНДЕКС.ТЕЛЕМОСТ                 │
+│  Layer 2: АВАРИЙНЫЙ — WebRTC ЧЕРЕЗ ЯНДЕКС.ТЕЛЕМОСТ                 │
 │  ┌──────────┐  WebRTC  ┌───────────┐  DataCh  ┌──────────┐       │
 │  │Устройства│ ──────── │ Я.Телемост│ ──────── │ VPS SWE  │──Net  │
 │  └──────────┘          │   (SFU)   │           └──────────┘       │
 │                         └───────────┘                               │
 │  Яндекс ВСЕГДА в белом списке. До 44 Mbps.                        │
+│                                                                     │
+│  Layer 3: CDN-ФРОНТИНГ ЧЕРЕЗ CLOUDFLARE (только Wi-Fi)            │
+│  ┌──────────┐   HTTPS/WSS    ┌───────────┐      ┌──────────┐     │
+│  │Устройства│ ────────────  │ Cloudflare │ ──── │ VPS SWE  │──Net│
+│  └──────────┘  SNI: CF домен │  CDN (WL)  │      └──────────┘     │
+│                               └───────────┘                         │
+│  ⚠ Cloudflare блокируется ТСПУ с 2025! Работает только на Wi-Fi.  │
 │                                                                     │
 │  + SPLIT ROUTING: Российские сайты идут НАПРЯМУЮ                   │
 │    (Yandex, VK, Госуслуги, банки — без VPN)                        │
@@ -50,7 +50,7 @@
 | 2 | reality-google | 8443 | TCP RAW | dl.google.com | Резервный SNI |
 | 3 | reality-apple | 2053 | TCP RAW | www.apple.com | Ещё один SNI |
 | 4 | ws-cloudflare | 2082 | WebSocket | (через CF домен) | CDN-фронтинг |
-| 5 | relay-xhttp | 10443 | xHTTP | www.microsoft.com | Relay Layer 2 |
+| 5 | relay-xhttp | 10443 | xHTTP | www.microsoft.com | Relay Layer 1 |
 | 6 | grpc-transport | 10444 | gRPC | updates.microsoft.com | Ещё один транспорт |
 
 ## Компоненты
@@ -72,6 +72,6 @@
 1. **reality-main:443** — если работает, используем (минимальная латентность)
 2. **reality-google:8443** — если 443 заблокирован оператором
 3. **reality-apple:2053** — ещё один резервный SNI
-4. **ws-cloudflare:2082** — если все прямые подключения к VPS заблокированы
-5. **Relay через РФ** — если IP VPS в чёрном списке целиком
-6. **WebRTC** — аварийный вариант при полном white-list
+4. **Relay через Yandex Cloud** — если IP VPS в чёрном списке целиком (Layer 1)
+5. **WebRTC** — аварийный вариант при полном white-list (Layer 2)
+6. **ws-cloudflare:2082** — CDN Cloudflare, только Wi-Fi (Layer 3, блокируется ТСПУ с 2025)

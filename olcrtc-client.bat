@@ -1,6 +1,6 @@
 @echo off
 REM =============================================================================
-REM  OLCRTC-CLIENT.BAT — Windows клиент OlcRTC (Layer 3 аварийный)
+REM  OLCRTC-CLIENT.BAT — Windows клиент OlcRTC (Layer 2 аварийный)
 REM =============================================================================
 REM
 REM  Запускает нативный olcrtc.exe (Go cross-compiled) или WSL2 fallback.
@@ -19,7 +19,7 @@ REM ============================================================================
 
 echo.
 echo  ======================================================
-echo   OlcRTC Client -- Layer 3 Emergency WebRTC
+echo   OlcRTC Client -- Layer 2 Emergency WebRTC
 echo  ======================================================
 echo.
 

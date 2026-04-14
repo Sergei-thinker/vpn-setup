@@ -35,60 +35,6 @@
 
 **Split routing:** Российские сайты (Yandex, VK, Госуслуги, банки) идут напрямую, минуя VPN.
 
-## Структура проекта
-
-```
-vpn-setup/
-├── CLAUDE.md                    # Этот файл -- инструкции для Claude Code
-├── README.md                    # Описание проекта для пользователей
-├── GUIDE.md                     # Полное руководство для ручной настройки
-│
-├── docs/                        # Документация (разбита по темам)
-│   ├── README.md                # Индекс документации
-│   ├── 01-overview.md           # Зачем VPN, как работают блокировки, выбор технологии
-│   ├── 02-architecture.md       # Многоуровневая архитектура, матрица inbound-ов
-│   ├── 03-server-setup.md       # Пошаговая настройка VPS + 3X-UI + VLESS Reality
-│   ├── 04-client-setup.md       # Настройка клиентов (Windows, iOS, Android, macOS)
-│   ├── 05-security.md           # Безопасность, hardening, оптимизация для мобильных
-│   ├── 06-split-routing.md      # Split routing -- российские сайты напрямую
-│   ├── 07-advanced-layers.md    # CDN-фронтинг, Relay, аварийные методы
-│   ├── 08-operations.md         # Мониторинг, обслуживание, troubleshooting
-│   ├── 09-status.md             # Текущий статус, бюджет, источники
-│   └── 10-router-setup.md      # VPN на роутере (Keenetic, OpenWrt, ASUS Merlin)
-│
-├── client-configs/              # Конфиги split routing для клиентов
-│   ├── README.md                # Инструкция по настройке routing
-│   ├── shadowrocket-rules.conf  # iOS (Shadowrocket) -- 150+ RU доменов
-│   ├── v2rayng-routing.json     # Android (v2rayNG)
-│   ├── hiddify-routing.txt      # Windows (Hiddify)
-│   ├── xray-server-routing.json # Серверный routing (3X-UI)
-│   ├── relay-config.md          # Настройка клиента для relay (Layer 1)
-│   └── router-xray-config.json  # Xray JSON конфиг для роутера
-│
-├── cloudflare-worker/           # Cloudflare Worker -- CDN-фронтинг (Layer 3)
-│   ├── README.md                # Инструкция по деплою Worker
-│   ├── worker.js                # WebSocket-прокси (маскировка под "Coming Soon")
-│   └── wrangler.toml            # Конфигурация Wrangler
-│
-├── quick-rebuild.sh             # Полная установка VPN с нуля на чистый VPS
-├── deploy-multilayer.sh         # Деплой multi-layer inbound-ов на существующий VPS
-├── deploy-relay-sweden.sh       # Создание xHTTP inbound на зарубежном VPS (Layer 1)
-├── deploy-relay.sh              # Полный деплой relay на российском VPS -- generic (Layer 1)
-├── deploy-relay-yc.sh           # Провизия relay VM в Yandex Cloud (Layer 1, рекомендуемый)
-├── deploy-olcrtc-server.sh      # Установка OlcRTC-сервера на VPS (Layer 2)
-├── yc-cloud-init.yaml.tpl       # Шаблон cloud-init для YC VM
-├── rotate-relay-yc.sh           # Авто-рестарт preemptible VM в Yandex Cloud
-├── monitor-relay.sh             # Health check обоих VPS
-├── optimize-server.sh           # Оптимизация BBR/TCP
-├── ssh_exec.py                  # SSH-утилита управления сервером
-├── olcrtc-client.bat            # OlcRTC клиент для Windows
-├── olcrtc-wsl-client.sh         # OlcRTC клиент для WSL/Linux
-│
-├── .env                         # Credentials (НЕ коммитить!)
-├── .env.example                 # Шаблон .env
-└── .gitignore
-```
-
 ## Предварительные требования
 
 Перед деплоем убедись что:
@@ -226,64 +172,11 @@ python ssh_exec.py deploy deploy-multilayer.sh
 python ssh_exec.py deploy deploy-relay.sh
 ```
 
-## Split routing
+## Справочная документация
 
-Российские сайты должны идти напрямую (без VPN) -- это быстрее и не вызывает подозрений.
-
-Готовые конфиги:
-- **iOS (Shadowrocket):** `client-configs/shadowrocket-rules.conf`
-- **Android (v2rayNG):** `client-configs/v2rayng-routing.json`
-- **Windows (Hiddify):** `client-configs/hiddify-routing.txt`
-- **Серверный routing:** `client-configs/xray-server-routing.json`
-- **Роутер (Xray JSON):** `client-configs/router-xray-config.json`
-
-Инструкция по настройке: `client-configs/README.md`
-Настройка на роутере: `docs/10-router-setup.md`
-
-## Troubleshooting
-
-| Проблема | Диагностика | Решение |
-|----------|-------------|---------|
-| VPN не подключается | `python ssh_exec.py status` | Проверить что xray запущен, перезапустить: `python ssh_exec.py restart` |
-| Подключается, но нет интернета | Проверить routing в клиенте | Убедиться что split routing настроен правильно |
-| Работает Wi-Fi, не работает LTE | Мобильный оператор блокирует агрессивнее | TLS-фрагментация 100-400 байт в настройках клиента |
-| Низкая скорость | `python ssh_exec.py exec "sysctl net.ipv4.tcp_congestion_control"` | Должен быть BBR. Если нет: `python ssh_exec.py deploy optimize-server.sh` |
-| VPS IP заблокирован | Не подключается ни через один порт | Переключиться на Layer 1 (Yandex Cloud relay) |
-| Мобильная сеть с белыми списками | Layer 0 не работает на LTE, работает на Wi-Fi | Layer 1: `deploy-relay-sweden.sh` + `deploy-relay-yc.sh` |
-| Ничего не работает | Ни один layer не помогает | Layer 2: WebRTC через Телемост (`deploy-olcrtc-server.sh`) |
-| 3X-UI панель недоступна | `python ssh_exec.py exec "systemctl status x-ui"` | `python ssh_exec.py exec "systemctl restart x-ui"` |
-
-## Известные проблемы
-
-| Проблема | Решение |
-|----------|---------|
-| `flow xtls-rprx-vision` — sing-box core не передаёт flow | Отключён на сервере, без flow работает стабильно |
-| Мобильные операторы (МТС, Мегафон) блокируют агрессивнее Wi-Fi | TLS-фрагментация 100-400 байт в клиенте |
-| SSH порт 22 блокируется ТСПУ к зарубежным IP | quick-rebuild.sh автоматически меняет на 49152 |
-| Hiddify "Системный прокси" — QUIC/UDP утечка, Google/Claude видят РФ | **Использовать v2rayN с TUN-режимом** (см. docs/05-security.md) |
-| v2rayN + Xray core — QUIC ломается через SOCKS5 handoff | **Использовать sing-box core** в v2rayN (Settings → Core Type) |
-| Hiddify режим "VPN" — ошибка "failed to start background core" | Использовать v2rayN вместо Hiddify |
-| NekoBox/Nekoray — проект архивирован (март 2025) | Мигрировать на v2rayN |
-| v2rayN нет кнопки "Отключить VPN" | Toggle "Enable Tun" внизу окна |
-| Cloudflare CDN заблокирован ТСПУ с 2025 | Использовать Layer 1 (Yandex Cloud) вместо Layer 3 |
-| OlcRTC (Layer 2) пока только десктоп | Мобильное приложение ещё не создано. Для мобильных использовать Layer 1 |
-
-## Документация
-
-| Документ | Содержание |
-|----------|-----------|
-| [GUIDE.md](GUIDE.md) | Полное руководство для ручной настройки |
-| [docs/README.md](docs/README.md) | Индекс документации |
-| [docs/02-architecture.md](docs/02-architecture.md) | Архитектура, матрица inbound-ов |
-| [docs/03-server-setup.md](docs/03-server-setup.md) | Настройка VPS, 3X-UI, VLESS Reality |
-| [docs/04-client-setup.md](docs/04-client-setup.md) | Клиенты: v2rayN (Windows), Shadowrocket (iOS), v2rayNG (Android) |
-| [docs/05-security.md](docs/05-security.md) | Hardening, утечки QUIC/UDP, sing-box core, оптимизация |
-| [client-configs/v2rayn-setup.md](client-configs/v2rayn-setup.md) | Пошаговая настройка v2rayN (Windows) |
-| [docs/07-advanced-layers.md](docs/07-advanced-layers.md) | CDN Cloudflare, Relay, WebRTC |
-| [docs/08-operations.md](docs/08-operations.md) | Мониторинг, troubleshooting |
-| [docs/10-router-setup.md](docs/10-router-setup.md) | VPN на роутере: Keenetic, OpenWrt, ASUS Merlin |
-| [client-configs/README.md](client-configs/README.md) | Настройка split routing |
-| [cloudflare-worker/README.md](cloudflare-worker/README.md) | Деплой Cloudflare Worker |
+- Индекс документации: `docs/README.md`
+- Troubleshooting и известные проблемы: `docs/08-operations.md`
+- Split routing: `client-configs/README.md`
 
 ## Правила
 
