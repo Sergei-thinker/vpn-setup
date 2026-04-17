@@ -127,6 +127,9 @@ Claude автоматически:
 | `deploy-relay.sh` | Деплой relay на generic RU VPS (Timeweb/VDSina/Selectel) |
 | `deploy-relay-sweden.sh` | Создание xHTTP inbound на основном VPS для relay-цепочки |
 | `deploy-olcrtc-server.sh` | Установка WebRTC-сервера (аварийный) |
+| `deploy-ip-leak-block.sh` | Применить IP-leak blocklist на существующий 3X-UI (вставка xrayTemplateConfig в x-ui.db + рестарт xray) |
+| `deploy-sni-rotation.sh` | Расширить serverNames до 4 SNI на каждый Reality inbound (без ломки существующих клиентских URI) |
+| `test-leak-block.sh` | E2E функциональный тест: на сервере поднимает xray-клиент и проверяет что ipify.org заблокирован, google работает |
 | `deploy-sni-split.sh` | Опциональный Layer 0.5: свой домен + nginx ssl_preread SNI-split (по рецепту @ice938) |
 | `check-ip-leaks.sh` | Верификация серверного блока IP-leak эндпоинтов — запускать с клиента через активный VPN |
 | `ssh_exec.py` | Утилита для управления сервером по SSH |
