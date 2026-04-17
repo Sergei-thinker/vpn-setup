@@ -533,7 +533,7 @@ STREAM_MAIN=$(cat <<EOJSON
     "show": false,
     "xver": 0,
     "dest": "www.microsoft.com:443",
-    "serverNames": ["www.microsoft.com", "microsoft.com"],
+    "serverNames": ["www.microsoft.com", "microsoft.com", "www.bing.com", "azure.microsoft.com"],
     "privateKey": "$PRIVATE_KEY",
     "minClient": "",
     "maxClient": "",
@@ -600,7 +600,7 @@ STREAM_GOOGLE=$(cat <<EOJSON
     "show": false,
     "xver": 0,
     "dest": "dl.google.com:443",
-    "serverNames": ["dl.google.com"],
+    "serverNames": ["dl.google.com", "www.google.com", "accounts.google.com", "mail.google.com"],
     "privateKey": "$PRIVATE_KEY",
     "minClient": "",
     "maxClient": "",
@@ -662,7 +662,7 @@ STREAM_APPLE=$(cat <<EOJSON
     "show": false,
     "xver": 0,
     "dest": "www.apple.com:443",
-    "serverNames": ["www.apple.com", "apple.com"],
+    "serverNames": ["www.apple.com", "apple.com", "www.icloud.com", "support.apple.com"],
     "privateKey": "$PRIVATE_KEY",
     "minClient": "",
     "maxClient": "",
@@ -933,10 +933,25 @@ separator
 # ГЕНЕРАЦИЯ VLESS-ССЫЛОК
 # =============================================================================
 
+# Пулы SNI для каждого inbound (Reality serverNames — клиент может выбрать любое)
+# Рандомизация: DPI не видит паттерн "один IP = один SNI постоянно"
+SNI_POOL_MAIN=("www.microsoft.com" "microsoft.com" "www.bing.com" "azure.microsoft.com")
+SNI_POOL_GOOGLE=("dl.google.com" "www.google.com" "accounts.google.com" "mail.google.com")
+SNI_POOL_APPLE=("www.apple.com" "apple.com" "www.icloud.com" "support.apple.com")
+
+random_sni() {
+    local -n pool=$1
+    echo "${pool[$RANDOM % ${#pool[@]}]}"
+}
+
+SNI_MAIN=$(random_sni SNI_POOL_MAIN)
+SNI_GOOGLE=$(random_sni SNI_POOL_GOOGLE)
+SNI_APPLE=$(random_sni SNI_POOL_APPLE)
+
 # VLESS Reality ссылка: vless://UUID@IP:PORT?type=tcp&security=reality&sni=SNI&fp=chrome&pbk=PUBLIC_KEY&sid=SHORT_ID#remark
-VLESS_MAIN="vless://${UUID_MAIN}@${SERVER_IP}:443?type=tcp&security=reality&sni=www.microsoft.com&fp=chrome&pbk=${PUBLIC_KEY}&sid=${SID_MAIN}&flow=&encryption=none#reality-main"
-VLESS_GOOGLE="vless://${UUID_GOOGLE}@${SERVER_IP}:8443?type=tcp&security=reality&sni=dl.google.com&fp=chrome&pbk=${PUBLIC_KEY}&sid=${SID_GOOGLE}&flow=&encryption=none#reality-google"
-VLESS_APPLE="vless://${UUID_APPLE}@${SERVER_IP}:2053?type=tcp&security=reality&sni=www.apple.com&fp=chrome&pbk=${PUBLIC_KEY}&sid=${SID_APPLE}&flow=&encryption=none#reality-apple"
+VLESS_MAIN="vless://${UUID_MAIN}@${SERVER_IP}:443?type=tcp&security=reality&sni=${SNI_MAIN}&fp=chrome&pbk=${PUBLIC_KEY}&sid=${SID_MAIN}&flow=&encryption=none#reality-main"
+VLESS_GOOGLE="vless://${UUID_GOOGLE}@${SERVER_IP}:8443?type=tcp&security=reality&sni=${SNI_GOOGLE}&fp=chrome&pbk=${PUBLIC_KEY}&sid=${SID_GOOGLE}&flow=&encryption=none#reality-google"
+VLESS_APPLE="vless://${UUID_APPLE}@${SERVER_IP}:2053?type=tcp&security=reality&sni=${SNI_APPLE}&fp=chrome&pbk=${PUBLIC_KEY}&sid=${SID_APPLE}&flow=&encryption=none#reality-apple"
 VLESS_WS="vless://${UUID_WS}@${SERVER_IP}:2082?type=ws&security=none&path=%2Fws-proxy&encryption=none#ws-cloudflare"
 
 # Subscription URL
@@ -968,13 +983,16 @@ $SUB_URL
 
 ## VLESS ССЫЛКИ
 
-### reality-main (порт 443, SNI: www.microsoft.com)
+### reality-main (порт 443, SNI: $SNI_MAIN)
+### Пул SNI (можно менять в ссылке на лету): ${SNI_POOL_MAIN[*]}
 $VLESS_MAIN
 
-### reality-google (порт 8443, SNI: dl.google.com)
+### reality-google (порт 8443, SNI: $SNI_GOOGLE)
+### Пул SNI: ${SNI_POOL_GOOGLE[*]}
 $VLESS_GOOGLE
 
-### reality-apple (порт 2053, SNI: www.apple.com)
+### reality-apple (порт 2053, SNI: $SNI_APPLE)
+### Пул SNI: ${SNI_POOL_APPLE[*]}
 $VLESS_APPLE
 
 ### ws-cloudflare (порт 2082, WebSocket — для Cloudflare CDN)

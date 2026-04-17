@@ -1,5 +1,5 @@
 {
-  "description": "Split routing: Russian services DIRECT, everything else through PROXY. Import in v2rayNG -> Settings -> Routing Settings -> Custom Rules",
+  "description": "Split routing: Russian services DIRECT, IP-leak endpoints BLOCK (anti-deanon, see habr 1023224), everything else PROXY. Import in v2rayNG -> Settings -> Routing Settings -> Custom Rules",
   "domainStrategy": "IPIfNonMatch",
   "rules": [
     {
@@ -174,6 +174,29 @@
       "ip": [
         "geoip:ru",
         "geoip:private"
+      ]
+    },
+    {
+      "type": "field",
+      "outboundTag": "block",
+      "domain": [
+        "domain:ipify.org",
+        "domain:ifconfig.me",
+        "domain:ifconfig.io",
+        "domain:ifconfig.co",
+        "domain:icanhazip.com",
+        "domain:ipinfo.io",
+        "domain:ipapi.co",
+        "domain:ip-api.com",
+        "domain:checkip.amazonaws.com",
+        "domain:checkip.dyndns.com",
+        "domain:wtfismyip.com",
+        "domain:my-ip.io",
+        "domain:myexternalip.com",
+        "domain:ipecho.net",
+        "domain:2ip.io",
+        "domain:2ip.ru",
+        "full:redirector.googlevideo.com"
       ]
     },
     {

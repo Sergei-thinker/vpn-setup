@@ -29,6 +29,29 @@
       "domain": [
         "geosite:category-ads-all"
       ]
+    },
+    {
+      "type": "field",
+      "outboundTag": "block",
+      "domain": [
+        "domain:ipify.org",
+        "domain:ifconfig.me",
+        "domain:ifconfig.io",
+        "domain:ifconfig.co",
+        "domain:icanhazip.com",
+        "domain:ipinfo.io",
+        "domain:ipapi.co",
+        "domain:ip-api.com",
+        "domain:checkip.amazonaws.com",
+        "domain:checkip.dyndns.com",
+        "domain:wtfismyip.com",
+        "domain:my-ip.io",
+        "domain:myexternalip.com",
+        "domain:ipecho.net",
+        "domain:2ip.io",
+        "domain:2ip.ru",
+        "full:redirector.googlevideo.com"
+      ]
     }
   ]
 }
