@@ -137,92 +137,9 @@ bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release
 
 ---
 
-## Relay через Yandex Cloud (Layer 1, рекомендуемый)
+## Устаревшее: Yandex Cloud как relay
 
-### Почему Yandex Cloud
-
-С середины 2025 Cloudflare активно блокируется ТСПУ. При белых списках на мобильной сети (МТС, Мегафон) пропускаются только российские IP. **IP Yandex Cloud подтверждённо в белых списках** (добавлен 19.09.2025).
-
-### Архитектура
-
-```
-Клиент → Yandex Cloud VM:15443 (VLESS Reality, SNI: yandex.ru)
-         [IP в белом списке ТСПУ]
-         │
-         └─→ Swedish VPS:10443 (VLESS xHTTP Reality, SNI: microsoft.com)
-             │
-             └─→ Интернет
-```
-
-### Отличия от generic relay
-
-| Параметр | Generic VPS | Yandex Cloud |
-|----------|-------------|--------------|
-| IP в белых списках | Не гарантировано | Да |
-| SNI | gosuslugi.ru | yandex.ru (нативный) |
-| Порт relay | 443 | 15443 (декой nginx на 443) |
-| Декой | Нет | Nginx с фейковым сайтом |
-| Провизия | SSH-скрипт | yc CLI + cloud-init |
-| Детекция | Базовая | ML (SmartWebSecurity) |
-| Стоимость | ~80 RUB/мес | ~400 RUB/мес (preemptible) |
-
-### Anti-detection
-
-| Мера | Зачем |
-|------|-------|
-| Nginx декой на 80/443 | VM выглядит как обычный веб-сервер |
-| Xray на порту 15443 | Не конфликтует с декоем |
-| SNI: yandex.ru | Нативный для Yandex Cloud IP |
-| Cloud-init | VM "рождается настроенной", без SSH-скриптов |
-| Низкий трафик | < 50 GB/мес (лимит free tier: 100 GB) |
-
-### Скрипты
-
-| Скрипт | Назначение |
-|--------|-----------|
-| `deploy-relay-sweden.sh` | Создаёт xHTTP inbound на шведском VPS (порт 10443) |
-| `deploy-relay-yc.sh` | Провизия VM в Yandex Cloud через `yc` CLI |
-| `rotate-relay-yc.sh` | Авто-рестарт preemptible VM, обновление IP |
-| `monitor-relay.sh` | Health check (включая проверку YC VM) |
-
-### Деплой
-
-```bash
-# 1. Подготовка шведского VPS (один раз)
-python ssh_exec.py deploy deploy-relay-sweden.sh
-
-# 2. Заполнить .env: YC_FOLDER_ID, SWEDEN_RELAY_UUID, SWEDEN_RELAY_PUBKEY, SWEDEN_RELAY_SID
-
-# 3. Провизия VM в Yandex Cloud
-bash deploy-relay-yc.sh
-
-# 4. (Для preemptible) Добавить в cron:
-# */5 * * * * /path/to/rotate-relay-yc.sh --cron >> /var/log/yc-relay-rotate.log 2>&1
-```
-
-### Управление
-
-```bash
-python ssh_exec.py yc-status                 # Статус YC VM (без SSH)
-python ssh_exec.py -t relay status           # Статус через SSH
-python ssh_exec.py -t relay logs             # Логи Xray
-bash rotate-relay-yc.sh                      # Рестарт если STOPPED
-bash monitor-relay.sh                        # Полный health check
-```
-
-### Preemptible VM
-
-Preemptible VM стоит ~4x дешевле, но останавливается через 24ч. `rotate-relay-yc.sh` автоматически перезапускает и обновляет `.env` при смене IP.
-
-**Если IP меняется часто** — рассмотрите статический IP (+100 RUB/мес) или non-preemptible VM (~1800 RUB/мес).
-
-### Fallback
-
-```
-Yandex Cloud заблокировали → RELAY_PROVIDER=vk, deploy-relay.sh на VK Cloud
-VK Cloud не работает       → RELAY_PROVIDER=generic, deploy-relay.sh на Timeweb
-Всё заблокировано          → Layer 2 (WebRTC/DNS-туннель)
-```
+> **UPDATE 2026-04-17:** Ранее этот раздел описывал провизию preemptible VM в Yandex Cloud с расчётом, что IP YC-VM находятся в белых списках ТСПУ. **По критике в комментах к [Habr 1021160](https://habr.com/ru/articles/1021160/) (@paxlo, @aax, @Varpun) тезис опровергнут:** AS `Yandex.Cloud LLC` (пользовательские VM, подсети `51.250.x.x`, `212.233.x.x`) и AS `YANDEX LLC` (сервисы Яндекса) — разные автономные системы, ТСПУ фильтрует их раздельно. На ряде регионов YC-VM блокируется при активных белых списках. **Мораль:** YC как «гарантированный обход белых списков» не работает. Скрипты `deploy-relay-yc.sh`, `rotate-relay-yc.sh`, `yc-cloud-init.yaml.tpl` удалены 2026-04-17. Используйте generic RU VPS (см. раздел выше).
 
 ---
 
@@ -274,7 +191,7 @@ bash <(curl -sL zarazaex.xyz/cnc.sh)
 
 ## CDN-фронтинг через Cloudflare (Layer 3)
 
-> **Обновление (апрель 2026):** С середины 2025 Cloudflare **активно блокируется** ТСПУ. При белых списках на мобильной сети Layer 3 **не работает**. Используйте Layer 1 (Yandex Cloud relay) для обхода белых списков. Layer 3 остаётся полезным только на домашнем Wi-Fi.
+> **Обновление (апрель 2026):** С середины 2025 Cloudflare **активно блокируется** ТСПУ. При белых списках на мобильной сети Layer 3 **не работает**. Используйте Layer 1 (relay на российском VPS — Timeweb/VDSina/Selectel). Layer 3 остаётся полезным только на домашнем Wi-Fi.
 
 IP-адреса Cloudflare (104.16.0.0/12, 172.64.0.0/13) ранее находились в белых списках ТСПУ, потому что тысячи российских сайтов используют Cloudflare.
 

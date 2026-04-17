@@ -12,17 +12,16 @@
 - [x] ulimit 65535, Xray v26.3.27
 - [x] Фикс краша XtlsPadding (flow отключён)
 
-## Реализовано (Layer 1 — Relay через Yandex Cloud)
-- [x] Relay inbound на шведском VPS (порт 10443, VLESS xHTTP Reality)
-- [x] VM в Yandex Cloud: `vpn-relay` (IP: <YOUR_RELAY_IP>, preemptible)
-- [x] Xray relay: порт 15443, VLESS Reality, SNI: yandex.ru
-- [x] Nginx декой на порту 80/443
-- [x] `deploy-relay-yc.sh` — провизия через `yc` CLI + cloud-init
-- [x] `rotate-relay-yc.sh` — авто-рестарт preemptible VM
-- [x] `yc-status` команда в `ssh_exec.py`
-- [x] Тест E2E: клиент → YC relay → Sweden → 2ip.ru показывает шведский IP
+## Реализовано (Layer 1 — Relay через российский VPS)
+- [x] Relay inbound на основном VPS (порт 10443, VLESS xHTTP Reality)
+- [x] `deploy-relay.sh` — полная автоматизация для generic RU VPS (Timeweb/VDSina/Selectel/VK Cloud)
+- [x] Xray relay: порт 443, VLESS Reality, SNI: gosuslugi.ru
+- [x] Мониторинг через `monitor-relay.sh` (проверка обоих VPS)
+- [x] Тест E2E: клиент → RU relay → основной VPS → 2ip.ru показывает зарубежный IP
 
-> **Важно:** Cloudflare активно блокируется ТСПУ с середины 2025. Layer 3 (Cloudflare) не работает при белых списках на мобильной сети. Layer 1 через Yandex Cloud — основной метод обхода белых списков.
+> **Важно:** Cloudflare активно блокируется ТСПУ с середины 2025. Layer 3 (Cloudflare) не работает при белых списках на мобильной сети. Layer 1 через российский generic VPS — единственный практический метод обхода белых списков.
+>
+> **Yandex Cloud удалён 2026-04-17**: по критике @paxlo/@aax/@Varpun в [комментах к Habr 1021160](https://habr.com/ru/articles/1021160/), AS `Yandex.Cloud LLC` ≠ AS `YANDEX LLC`, YC-VM блокируется при активных белых списках — тезис про «IP YC в белых списках ТСПУ» опровергнут. Скрипты `deploy-relay-yc.sh`/`rotate-relay-yc.sh`/`yc-cloud-init.yaml.tpl` удалены.
 
 ## Реализовано (Layer 3 — Cloudflare CDN)
 - [x] Домен `your-domain.com` (Namecheap)
@@ -35,7 +34,7 @@
 ## Подготовлено (скрипты и конфиги)
 - [x] `deploy-multilayer.sh` — развёртывание backup inbound-ов и мониторинга
 - [x] `quick-rebuild.sh` — disaster recovery с нуля
-- [x] `ssh_exec.py` — SSH-утилита (SSH-ключи, dual-VPS, yc-status)
+- [x] `ssh_exec.py` — SSH-утилита (SSH-ключи, dual-VPS, relay-status)
 - [x] `cloudflare-worker/` — Worker для CDN-фронтинга
 - [x] `client-configs/` — split routing для всех платформ
 - [x] `deploy-relay.sh` — fallback relay для generic VPS (Timeweb и т.д.)
@@ -48,8 +47,6 @@
 
 **P2 — Layer 1 доработки:**
 - [ ] Протестировать Layer 1 на мобильной сети при белых списках (МТС/Мегафон)
-- [ ] Настроить `rotate-relay-yc.sh` в cron на Swedish VPS
-- [ ] Рассмотреть статический IP (если IP меняется слишком часто, +100 RUB/мес)
 - [ ] Арендовать backup VPS (другой провайдер, fallback)
 
 **P3 — Аварийная готовность (Layer 2 — OlcRTC):**
@@ -62,7 +59,7 @@
 | Статья | Стоимость | Фаза |
 |--------|-----------|------|
 | VPS (EU, KVM) | ~$2-5/мес | 0 |
-| Yandex Cloud relay (preemptible) | ~400 RUB/мес (~4 EUR) | 1 |
+| RU relay VPS (Timeweb/VDSina) | ~80-100 RUB/мес (~$1) | 1 |
 | Backup VPS (опц.) | 2-5 EUR/мес | 1 |
 | Домен (Namecheap) | ~$6/год (первый год ~$3) | 3 |
 | Cloudflare | 0 EUR | 3 |

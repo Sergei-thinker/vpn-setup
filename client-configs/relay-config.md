@@ -2,31 +2,14 @@
 
 ## Обзор
 
-Relay — резервный канал для случаев, когда шведский VPS IP полностью заблокирован ТСПУ.
-Трафик идёт: **Клиент → Российский VPS → Шведский VPS → Интернет**.
+Relay — резервный канал для случаев, когда основной VPS IP полностью заблокирован ТСПУ.
+Трафик идёт: **Клиент → Российский VPS → Основной VPS → Интернет**.
 
-### Два варианта relay
-
-| Вариант | SNI | Порт | Скрипт | Когда использовать |
-|---------|-----|------|--------|--------------------|
-| **Yandex Cloud** (рекомендуемый) | `yandex.ru` | 15443 | `deploy-relay-yc.sh` | Белые списки на мобильной сети |
-| Generic VPS (Timeweb и т.д.) | `gosuslugi.ru` | 443 | `deploy-relay.sh` | Если YC заблокировали |
+> **История:** до апреля 2026 проект предлагал отдельный вариант relay через Yandex Cloud preemptible VM (SNI `yandex.ru`, порт 15443) — якобы «IP YC в белых списках ТСПУ». После критики в комментах к [Habr 1021160](https://habr.com/ru/articles/1021160/) (@paxlo, @aax, @Varpun) тезис опровергнут: AS `Yandex.Cloud LLC` и AS `YANDEX LLC` — разные автономные системы, ТСПУ фильтрует их раздельно, YC-VM блокируется при активных белых списках. YC-вариант удалён 2026-04-17, остался только generic relay на любом российском VPS.
 
 ## VLESS URI
 
-### Yandex Cloud relay
-
-После запуска `deploy-relay-yc.sh` вы получите URI вида:
-
-```
-vless://<UUID>@<YC_IP>:15443?type=tcp&security=reality&pbk=<PUBLIC_KEY>&fp=chrome&sni=yandex.ru&sid=<SHORT_ID>&spx=#YC-Relay
-```
-
-Актуальный URI сохраняется в `yc-relay-credentials.txt` в корне проекта.
-
-**Важно:** при использовании preemptible VM IP может меняться каждые 24ч. После рестарта проверьте `yc-relay-credentials.txt` или запустите `rotate-relay-yc.sh`.
-
-### Generic relay (Timeweb/VDSina)
+### Generic relay (Timeweb/VDSina/Selectel/VK Cloud)
 
 После запуска `deploy-relay.sh` вы получите URI вида:
 

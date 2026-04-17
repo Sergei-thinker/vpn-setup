@@ -465,79 +465,6 @@ def cmd_update_xray(args, cfg):
         client.close()
 
 
-def cmd_yc_status(args, cfg):
-    """Show Yandex Cloud relay VM status via yc CLI (no SSH required)."""
-    import subprocess
-    import json
-
-    load_dotenv()
-    folder_id = os.environ.get("YC_FOLDER_ID", "")
-    vm_name = os.environ.get("YC_VM_NAME", "vpn-relay")
-
-    if not folder_id:
-        # Try yc config
-        try:
-            result = subprocess.run(["yc", "config", "get", "folder-id"],
-                                    capture_output=True, text=True, timeout=10)
-            folder_id = result.stdout.strip()
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            pass
-
-    if not folder_id:
-        error("YC_FOLDER_ID not set and yc config unavailable")
-        sys.exit(1)
-
-    print(f"\n{Color.BOLD}=== Yandex Cloud Relay VM ==={Color.RESET}")
-
-    try:
-        result = subprocess.run(
-            ["yc", "compute", "instance", "get",
-             "--name", vm_name, "--folder-id", folder_id, "--format", "json"],
-            capture_output=True, text=True, timeout=30,
-        )
-        if result.returncode != 0:
-            error(f"VM '{vm_name}' not found: {result.stderr.strip()}")
-            sys.exit(1)
-
-        vm = json.loads(result.stdout)
-        status = vm.get("status", "UNKNOWN")
-        created = vm.get("created_at", "?")
-        zone = vm.get("zone_id", "?")
-
-        # Extract IP
-        ip = ""
-        ifaces = vm.get("network_interfaces", [])
-        if ifaces:
-            nat = ifaces[0].get("primary_v4_address", {}).get("one_to_one_nat", {})
-            ip = nat.get("address", "")
-
-        # Color status
-        status_color = Color.GREEN if status == "RUNNING" else Color.RED if status == "STOPPED" else Color.YELLOW
-
-        print(f"  VM Name:   {vm_name}")
-        print(f"  Status:    {status_color}{status}{Color.RESET}")
-        print(f"  IP:        {ip or 'N/A'}")
-        print(f"  Zone:      {zone}")
-        print(f"  Created:   {created}")
-
-        preemptible = vm.get("scheduling_policy", {}).get("preemptible", False)
-        if preemptible:
-            print(f"  {Color.YELLOW}Preemptible: VM will be stopped after 24h{Color.RESET}")
-
-        # Check if RELAY_HOST matches
-        current_relay = os.environ.get("RELAY_HOST", "")
-        if ip and current_relay and ip != current_relay:
-            warn(f"IP mismatch! VM: {ip}, .env RELAY_HOST: {current_relay}")
-            warn("Run rotate-relay-yc.sh to update")
-
-    except FileNotFoundError:
-        error("yc CLI not found. Install: curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash")
-        sys.exit(1)
-    except subprocess.TimeoutExpired:
-        error("yc CLI timed out")
-        sys.exit(1)
-
-
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -592,12 +519,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_update.set_defaults(func=cmd_update_xray)
 
     # relay-status (combined view of both VPSes)
-    p_relay_status = sub.add_parser("relay-status", help="Show status of both VPSes (Sweden + Relay)")
+    p_relay_status = sub.add_parser("relay-status", help="Show status of both VPSes (Main + Relay)")
     p_relay_status.set_defaults(func=cmd_relay_status)
-
-    # yc-status (Yandex Cloud VM status via yc CLI)
-    p_yc_status = sub.add_parser("yc-status", help="Show Yandex Cloud relay VM status (no SSH)")
-    p_yc_status.set_defaults(func=cmd_yc_status)
 
     return parser
 
@@ -613,7 +536,7 @@ def main():
     cfg = get_config(args.target)
 
     # Commands that handle their own connections (no SSH needed)
-    if args.command_name in ("relay-status", "yc-status"):
+    if args.command_name in ("relay-status",):
         try:
             args.func(args, cfg)
         except KeyboardInterrupt:

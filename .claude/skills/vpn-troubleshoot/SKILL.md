@@ -98,9 +98,10 @@ Ask user: "Does your VPN client (v2rayN/Shadowrocket/v2rayNG) show 'Connected'?"
    - Each port uses a different SNI (microsoft.com, google.com, apple.com)
 3. **If NO port works:**
    - Server IP is likely blocked by TSPU
-   - Solution: deploy Layer 1 relay via Yandex Cloud
+   - Solution: deploy Layer 1 relay on a Russian VPS (Timeweb/VDSina/Selectel)
    - Run: `python ssh_exec.py deploy deploy-relay-sweden.sh` (prepare main VPS)
-   - Then: `bash deploy-relay-yc.sh` (create relay VM)
+   - Then rent a RU VPS and run: `bash deploy-relay.sh --sweden-ip ... --sweden-uuid ... --sweden-pubkey ... --sweden-sid ...`
+   - NB: Yandex Cloud does NOT bypass white lists (AS Yandex.Cloud LLC != AS YANDEX LLC); use generic RU provider
    - See CLAUDE.md "Layer 1" section for full instructions
 4. **Client-specific issues:**
    - v2rayN: ensure TUN mode is ON (toggle at bottom of window)
@@ -170,15 +171,18 @@ Ask user: "Open 2ip.ru in your browser. What country does it show?"
 
 This is a **specific and common problem** caused by mobile operators using "white lists" (only allowing traffic to known Russian IPs).
 
-**Solution: Deploy Layer 1 (Yandex Cloud Relay)**
+**Solution: Deploy Layer 1 (Relay on Russian VPS)**
 
-Yandex Cloud IPs are in the white list of every Russian operator.
+IP ranges of Russian VPS providers (Timeweb, VDSina, Selectel) may be in the white list of mobile operators — but this is NOT guaranteed. You must verify after deploy.
+
+> **NB:** Yandex Cloud was previously recommended here; removed 2026-04-17 after Habr 1021160 comments (@paxlo/@aax/@Varpun) proved AS Yandex.Cloud LLC (user VMs) != AS YANDEX LLC (Yandex services) — TSPU filters them separately, YC VMs get blocked under active white lists.
 
 1. Prepare main VPS: `python ssh_exec.py deploy deploy-relay-sweden.sh`
 2. Fill relay credentials in `.env` (`SWEDEN_RELAY_UUID`, `SWEDEN_RELAY_PUBKEY`, `SWEDEN_RELAY_SID`)
-3. Deploy relay: `bash deploy-relay-yc.sh`
-4. Import the relay VLESS URI into client
-5. Test on LTE
+3. Rent a Russian VPS (Timeweb Cloud ~80 RUB/mo, VDSina ~100 RUB/mo), fill `RELAY_HOST` in `.env`
+4. Deploy relay: `bash deploy-relay.sh --sweden-ip $SWEDEN_VPS_IP --sweden-uuid $SWEDEN_RELAY_UUID --sweden-pubkey $SWEDEN_RELAY_PUBKEY --sweden-sid $SWEDEN_RELAY_SID`
+5. Import the relay VLESS URI into client
+6. Test on LTE — if blocked, try a different Russian provider
 
 See CLAUDE.md "Layer 1" section for details.
 

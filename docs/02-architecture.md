@@ -15,12 +15,12 @@
 │  └──────────┘   Маскировка: HTTPS к Microsoft   └──────────┘      │
 │                              Google, Apple                          │
 │                                                                     │
-│  Layer 1: RELAY ЧЕРЕЗ YANDEX CLOUD / РОССИЙСКИЙ VPS               │
+│  Layer 1: RELAY ЧЕРЕЗ РОССИЙСКИЙ VPS (Timeweb/VDSina/Selectel)     │
 │  ┌──────────┐  VLESS  ┌──────────┐  xhttp  ┌──────────┐          │
 │  │Устройства│ ────── │ VPS в РФ │ ─────── │ VPS SWE  │──Net     │
 │  └──────────┘         │ (relay)  │          └──────────┘          │
 │                        └──────────┘                                 │
-│  IP Yandex Cloud в белых списках ТСПУ. Главный fallback.           │
+│  Fallback если IP основного VPS в чёрном списке целиком.           │
 │                                                                     │
 │  Layer 2: АВАРИЙНЫЙ — WebRTC ЧЕРЕЗ ЯНДЕКС.ТЕЛЕМОСТ                 │
 │  ┌──────────┐  WebRTC  ┌───────────┐  DataCh  ┌──────────┐       │
@@ -72,6 +72,6 @@
 1. **reality-main:443** — если работает, используем (минимальная латентность)
 2. **reality-google:8443** — если 443 заблокирован оператором
 3. **reality-apple:2053** — ещё один резервный SNI
-4. **Relay через Yandex Cloud** — если IP VPS в чёрном списке целиком (Layer 1)
+4. **Relay через российский VPS** (Timeweb/VDSina/Selectel/VK Cloud) — если IP основного VPS в чёрном списке целиком (Layer 1). NB: Yandex Cloud НЕ обходит белые списки ТСПУ (AS Yandex.Cloud LLC != AS YANDEX LLC, см. [docs/07-advanced-layers.md](07-advanced-layers.md)).
 5. **WebRTC** — аварийный вариант при полном white-list (Layer 2)
 6. **ws-cloudflare:2082** — CDN Cloudflare, только Wi-Fi (Layer 3, блокируется ТСПУ с 2025)

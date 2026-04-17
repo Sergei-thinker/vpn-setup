@@ -1,6 +1,6 @@
 # Инструкция по настройке VPN
 
-> **English:** Multi-layer VPN system (VLESS Reality + Yandex Cloud Relay + WebRTC) for bypassing Russian internet censorship (ТСПУ/DPI). Designed to be deployed automatically via [Claude Code](https://claude.ai/claude-code). See below for Russian documentation.
+> **English:** Multi-layer VPN system (VLESS Reality + Russian relay VPS + WebRTC) for bypassing Russian internet censorship (ТСПУ/DPI). Designed to be deployed automatically via [Claude Code](https://claude.ai/claude-code). See below for Russian documentation.
 
 ---
 
@@ -18,7 +18,7 @@ VPN-инфраструктура на базе **VLESS Reality** -- проток
 Приоритет подключения:
 
 Layer 0: VLESS Reality        → VPS за рубежом → Интернет     ← основной
-Layer 1: Yandex Cloud Relay   → VPS за рубежом → Интернет     ← обход белых списков
+Layer 1: Russian Relay VPS    → VPS за рубежом → Интернет     ← если IP VPS заблокирован
 Layer 2: WebRTC / Телемост    → VPS за рубежом → Интернет     ← аварийный
 Layer 3: Cloudflare CDN       → VPS за рубежом → Интернет     ← backup для Wi-Fi
 ```
@@ -26,9 +26,11 @@ Layer 3: Cloudflare CDN       → VPS за рубежом → Интернет  
 | Layer | Метод | Когда нужен | Платформы |
 |-------|-------|-------------|-----------|
 | **0** | **VLESS Reality** | Всегда, основной вариант | Все |
-| **1** | **Yandex Cloud Relay** | Мобильная сеть с белыми списками, IP VPS заблокирован | Все |
+| **1** | **Russian Relay VPS** (Timeweb, VDSina, Selectel) | Мобильная сеть с белыми списками, IP основного VPS заблокирован | Все |
 | **2** | **WebRTC / Телемост** | Полная блокировка, ничего не работает | Пока только десктоп (мобильное приложение OlcRTC ещё не создано) |
 | **3** | **Cloudflare CDN** | Backup при блокировке IP VPS (только домашний Wi-Fi, т.к. Cloudflare блокируется ТСПУ с 2025) | Все |
+
+> **Важно про Yandex Cloud:** ранее проект предлагал relay через Yandex Cloud preemptible VM как способ «попасть в белые списки ТСПУ». По фидбеку к [Habr 1021160](https://habr.com/ru/articles/1021160/) (комменты @paxlo, @aax, @Varpun) — это опровергается: AS `Yandex.Cloud LLC` и AS `YANDEX LLC` — разные автономные системы, ТСПУ фильтрует их раздельно. YC-VM уже блокируются при активных белых списках в ряде регионов. YC как гарантированный обход не работает, удалён из дефолтной архитектуры 2026-04-17. Используйте generic RU VPS (Timeweb/VDSina/Selectel) — шансы примерно те же, цена меньше.
 
 ## Что нужно сделать вам
 
@@ -122,7 +124,8 @@ Claude автоматически:
 | `client-configs/` | Готовые конфиги split routing для iOS, Android, Windows |
 | `cloudflare-worker/` | Cloudflare Worker для CDN-фронтинга (backup) |
 | `quick-rebuild.sh` | Полная установка VPN с нуля на чистый VPS |
-| `deploy-relay-yc.sh` | Деплой relay через Yandex Cloud |
+| `deploy-relay.sh` | Деплой relay на generic RU VPS (Timeweb/VDSina/Selectel) |
+| `deploy-relay-sweden.sh` | Создание xHTTP inbound на основном VPS для relay-цепочки |
 | `deploy-olcrtc-server.sh` | Установка WebRTC-сервера (аварийный) |
 | `deploy-sni-split.sh` | Опциональный Layer 0.5: свой домен + nginx ssl_preread SNI-split (по рецепту @ice938) |
 | `check-ip-leaks.sh` | Верификация серверного блока IP-leak эндпоинтов — запускать с клиента через активный VPN |
@@ -134,11 +137,11 @@ Claude автоматически:
 | Статья | Стоимость | Обязательно? |
 |--------|-----------|-------------|
 | VPS за рубежом | ~$2/мес | Да |
-| Домен | ~$6/год (первый год ~$3) | Нет (для Cloudflare backup) |
+| Домен | ~$6/год (первый год ~$3) | Нет (для Cloudflare backup и Layer 0.5 SNI-split) |
 | Cloudflare | Бесплатно | Нет |
-| Yandex Cloud relay | ~400 RUB/мес (~$4) | Нет (для обхода белых списков) |
+| RU relay VPS (Timeweb/VDSina) | ~80-100 RUB/мес (~$1) | Нет (если нужно обойти белые списки на мобильной сети) |
 | **Итого минимум** | **~$2/мес** | |
-| **Итого максимум** | **~$8/мес** | |
+| **Итого максимум** | **~$5/мес** | |
 
 ## Ссылки
 [Видео на ютуб](https://youtu.be/WwX2HC3xry4)

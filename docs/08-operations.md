@@ -34,7 +34,7 @@ Cron: `*/5 * * * * /root/monitor-xray.sh`
 2. Перезапустить: `python ssh_exec.py restart`
 3. Проверить логи: `python ssh_exec.py logs`
 4. Если основной порт заблокирован -> переключиться на backup inbound (8443 или 2053)
-5. Если IP заблокирован целиком -> переключиться на relay через Yandex Cloud (Layer 1)
+5. Если IP заблокирован целиком -> переключиться на relay через российский VPS (Layer 1, `deploy-relay.sh` на Timeweb/VDSina/Selectel)
 6. Если relay недоступен -> попробовать WebRTC через Телемост (Layer 2)
 7. На домашнем Wi-Fi -> попробовать Cloudflare CDN (Layer 3, блокируется ТСПУ с 2025)
 8. **Крайний случай:** пересоздать сервер (`quick-rebuild.sh`)
@@ -130,8 +130,8 @@ ssh root@NEW_IP "bash /root/quick-rebuild.sh"
 | Подключается, но нет интернета | Проверить routing в клиенте | Убедиться что split routing настроен правильно |
 | Работает Wi-Fi, не работает LTE | Мобильный оператор блокирует агрессивнее | TLS-фрагментация 100-400 байт в настройках клиента |
 | Низкая скорость | `python ssh_exec.py exec "sysctl net.ipv4.tcp_congestion_control"` | Должен быть BBR. Если нет: `python ssh_exec.py deploy optimize-server.sh` |
-| VPS IP заблокирован | Не подключается ни через один порт | Переключиться на Layer 1 (Yandex Cloud relay) |
-| Мобильная сеть с белыми списками | Layer 0 не работает на LTE, работает на Wi-Fi | Layer 1: `deploy-relay-sweden.sh` + `deploy-relay-yc.sh` |
+| VPS IP заблокирован | Не подключается ни через один порт | Переключиться на Layer 1 (relay на российском VPS, `deploy-relay.sh`) |
+| Мобильная сеть с белыми списками | Layer 0 не работает на LTE, работает на Wi-Fi | Layer 1: `deploy-relay-sweden.sh` + `deploy-relay.sh` (generic RU VPS) |
 | Ничего не работает | Ни один layer не помогает | Layer 2: WebRTC через Телемост (`deploy-olcrtc-server.sh`) |
 | 3X-UI панель недоступна | `python ssh_exec.py exec "systemctl status x-ui"` | `python ssh_exec.py exec "systemctl restart x-ui"` |
 
@@ -147,5 +147,5 @@ ssh root@NEW_IP "bash /root/quick-rebuild.sh"
 | Hiddify режим "VPN" — ошибка "failed to start background core" | Использовать v2rayN вместо Hiddify |
 | NekoBox/Nekoray — проект архивирован (март 2025) | Мигрировать на v2rayN |
 | v2rayN нет кнопки "Отключить VPN" | Toggle "Enable Tun" внизу окна |
-| Cloudflare CDN заблокирован ТСПУ с 2025 | Использовать Layer 1 (Yandex Cloud) вместо Layer 3 |
+| Cloudflare CDN заблокирован ТСПУ с 2025 | Использовать Layer 1 (relay на российском VPS) вместо Layer 3 |
 | OlcRTC (Layer 2) пока только десктоп | Мобильное приложение ещё не создано. Для мобильных использовать Layer 1 |

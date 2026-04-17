@@ -29,7 +29,7 @@
 | Layer | Метод | Роль | Статус |
 |-------|-------|------|--------|
 | 0 | VLESS Reality (прямое, порты 443/8443/2053) | **Основной** | Работает |
-| 1 | Relay через Yandex Cloud (xHTTP, SNI: yandex.ru) | **Главный fallback** -- обход белых списков на мобильных | Работает |
+| 1 | Relay через российский VPS (xHTTP, SNI: gosuslugi.ru) | **Главный fallback** -- обход белых списков на мобильных | Работает |
 | 2 | WebRTC через Яндекс.Телемост (OlcRTC) | Аварийный (пока только десктоп -- мобильное приложение OlcRTC ещё не создано) | Скрипты готовы |
 | 3 | Cloudflare CDN (WebSocket через домен пользователя) | Backup для Wi-Fi (Cloudflare блокируется ТСПУ с 2025) | Работает только на Wi-Fi |
 
@@ -79,27 +79,26 @@ python ssh_exec.py status
 - **Android:** v2rayNG — см. `docs/04-client-setup.md`
 - **Split routing:** дать конфиг из `client-configs/` для его платформы (см. `client-configs/README.md`)
 
-### Layer 1: Relay через Yandex Cloud (рекомендуемый backup)
+### Layer 1: Relay через российский VPS (рекомендуемый backup)
 
-**Когда нужен:** мобильная сеть с белыми списками, IP VPS заблокирован.
-**Почему работает:** IP-адреса Yandex Cloud в белых списках ТСПУ.
+**Когда нужен:** мобильная сеть с белыми списками, IP основного VPS заблокирован.
+**Почему работает:** IP российских провайдеров (Timeweb, VDSina, Selectel, VK Cloud) могут проходить белые списки операторов. Гарантии нет — проверять после деплоя.
+
+> **Yandex Cloud НЕ использовать.** Тезис «IP YC в белых списках ТСПУ» опровергнут в комментах к [Habr 1021160](https://habr.com/ru/articles/1021160/) (@paxlo, @aax, @Varpun): AS `Yandex.Cloud LLC` ≠ AS `YANDEX LLC`, YC-VM блокируется при активных белых списках. Скрипты `deploy-relay-yc.sh`/`rotate-relay-yc.sh`/`yc-cloud-init.yaml.tpl` удалены 2026-04-17.
 
 ```bash
-# 1. Настроить xHTTP inbound на зарубежном VPS (принимающая сторона)
+# 1. Настроить xHTTP inbound на основном VPS (принимающая сторона)
 python ssh_exec.py deploy deploy-relay-sweden.sh
 
-# 2. Заполнить .env: SWEDEN_RELAY_UUID, SWEDEN_RELAY_PUBKEY, SWEDEN_RELAY_SID
+# 2. Заполнить .env: RELAY_HOST, SWEDEN_RELAY_UUID, SWEDEN_RELAY_PUBKEY, SWEDEN_RELAY_SID
 #    (скрипт deploy-relay-sweden.sh выведет эти значения)
 
-# 3. Создать relay VM в Yandex Cloud
-#    Нужен: yc CLI (https://cloud.yandex.ru/docs/cli/quickstart)
-#    Нужен: YC_FOLDER_ID в .env
-bash deploy-relay-yc.sh
+# 3. Арендовать российский VPS (Timeweb Cloud ~80 RUB/мес, VDSina ~100 RUB/мес)
+#    и задеплоить relay
+bash deploy-relay.sh --sweden-ip <MAIN_VPS_IP> --sweden-uuid <UUID> --sweden-pubkey <PKEY> --sweden-sid <SID>
 
 # 4. Дать пользователю relay VLESS URI
 ```
-
-**Альтернатива Yandex Cloud:** `deploy-relay.sh` -- деплой relay на любой российский VPS (Timeweb, VDSina и др.)
 
 ### Layer 2: WebRTC через Телемост (аварийный, пока только десктоп)
 

@@ -55,9 +55,6 @@ RELAY_SSH_USER="${RELAY_SSH_USER:-root}"
 RELAY_SSH_KEY="${RELAY_SSH_KEY:-$HOME/.ssh/id_ed25519}"
 RELAY_PROVIDER="${RELAY_PROVIDER:-generic}"
 
-YC_FOLDER_ID="${YC_FOLDER_ID:-}"
-YC_VM_NAME="${YC_VM_NAME:-vpn-relay}"
-
 QUICK_MODE=false
 [ "${1:-}" = "--quick" ] && QUICK_MODE=true
 
@@ -128,47 +125,7 @@ echo -e "${BOLD}${CYAN}║   VPN Relay Health Check                 ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo -e "  Время: $(date '+%Y-%m-%d %H:%M:%S')"
 
-check_vps "Swedish VPS (Layer 0)" "$VPN_HOST" "$VPN_SSH_PORT" "$VPN_SSH_USER" "$VPN_SSH_KEY" "x-ui"
-
-# Yandex Cloud: дополнительная проверка через yc CLI
-if [ "$RELAY_PROVIDER" = "yandex" ] && command -v yc &>/dev/null; then
-    echo -e "\n${BOLD}=== Yandex Cloud VM [${YC_VM_NAME}] ===${NC}"
-    FOLDER="${YC_FOLDER_ID}"
-    if [ -z "$FOLDER" ]; then
-        FOLDER=$(yc config get folder-id 2>/dev/null || true)
-    fi
-    if [ -n "$FOLDER" ]; then
-        VM_JSON=$(yc compute instance get --name "$YC_VM_NAME" --folder-id "$FOLDER" --format json 2>/dev/null)
-        if [ -n "$VM_JSON" ]; then
-            YC_STATUS=$(echo "$VM_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])" 2>/dev/null)
-            YC_IP=$(echo "$VM_JSON" | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-ifaces=d.get('network_interfaces',[])
-if ifaces:
-    nat=ifaces[0].get('primary_v4_address',{}).get('one_to_one_nat',{})
-    print(nat.get('address',''))
-" 2>/dev/null)
-            if [ "$YC_STATUS" = "RUNNING" ]; then
-                ok "YC VM: RUNNING (IP: ${YC_IP:-?})"
-            elif [ "$YC_STATUS" = "STOPPED" ]; then
-                fail "YC VM: STOPPED — запустите rotate-relay-yc.sh"
-                ((ERRORS++))
-            else
-                warn "YC VM: $YC_STATUS"
-            fi
-            # Проверяем совпадение IP с .env
-            if [ -n "$YC_IP" ] && [ -n "$RELAY_HOST" ] && [ "$YC_IP" != "$RELAY_HOST" ]; then
-                warn "IP mismatch: VM=$YC_IP, .env RELAY_HOST=$RELAY_HOST"
-            fi
-        else
-            fail "YC VM '$YC_VM_NAME' не найдена"
-            ((ERRORS++))
-        fi
-    else
-        warn "YC_FOLDER_ID не задан, пропускаю проверку YC"
-    fi
-fi
+check_vps "Main VPS (Layer 0)" "$VPN_HOST" "$VPN_SSH_PORT" "$VPN_SSH_USER" "$VPN_SSH_KEY" "x-ui"
 
 check_vps "Russian Relay (Layer 1)" "$RELAY_HOST" "$RELAY_SSH_PORT" "$RELAY_SSH_USER" "$RELAY_SSH_KEY" "xray"
 
